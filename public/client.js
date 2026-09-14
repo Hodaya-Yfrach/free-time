@@ -264,7 +264,7 @@ function renderMatchMotion() {
   const shapeCount = shapeCountForLevel(level);
   const pool = shuffle(SHAPE_TYPES).slice(0, shapeCount);
   const rule = Math.random() < 0.5 ? 'shape' : 'color';
-  matchRuleTitle.textContent = rule === 'shape' ? 'התאימו לפי צורה (הצבע לא משנה)' : 'התאימו לפי צבע (הצורה לא משנה)';
+  matchRuleTitle.textContent = rule === 'shape' ? 'התאימו לפי סוג המאכל (הצבע לא משנה)' : 'התאימו לפי צבע (סוג המאכל לא משנה)';
 
   const target = { shape: randomItem(pool), color: randomItem(COLOR_PALETTE) };
   targetShapeEl.innerHTML = shapeSvg(target.shape, target.color, 80);
