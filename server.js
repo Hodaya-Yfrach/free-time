@@ -25,7 +25,7 @@ function broadcastLeaderboard(roomCode) {
 io.on('connection', (socket) => {
   socket.on('join-room', ({ roomCode, name }) => {
     roomCode = (roomCode || 'default').trim().toUpperCase();
-    name = (name || 'שחקן').trim().slice(0, 20);
+    name = (name || 'שחקנית').trim().slice(0, 20);
 
     if (!rooms[roomCode]) {
       rooms[roomCode] = { players: {}, leaderId: null };

@@ -53,9 +53,9 @@ body {
   cursor: pointer;
   transition: transform 0.15s, box-shadow 0.15s;
 }
-.lobby-card button:hover { 
-  transform: translateY(-2px); 
-  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2); 
+.lobby-card button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(37, 99, 235, 0.2);
 }
 .hint { font-size: 12px; color: #94a3b8; margin-top: 16px; }
 
@@ -152,13 +152,13 @@ body {
   color: #3b82f6;
   transition: color 0.3s;
 }
-.clock-urgent { 
-  color: #ef4444 !important; 
-  animation: tick 1s infinite; 
+.clock-urgent {
+  color: #ef4444 !important;
+  animation: tick 1s infinite;
 }
-@keyframes tick { 
-  0%, 100% { transform: scale(1); } 
-  50% { transform: scale(1.05); } 
+@keyframes tick {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
 }
 
 .mode-panel { display: none; }
@@ -178,6 +178,8 @@ body {
   box-shadow: 0 4px 15px rgba(0,0,0,0.02);
 }
 
+/* גודל מינימלי קבוע לכל תא - מונע "ריבועים ריקים"
+   שנוצרים כשתא מתכווץ לגודל 0 במסכים צרים */
 .shape-cell {
   background: #f8fafc;
   border: 2px solid #e2e8f0;
@@ -188,7 +190,12 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  min-width: 56px;
+  min-height: 56px;
+  flex-shrink: 0;
 }
+
+.shape-cell svg { display: block; width: 100%; height: 100%; }
 
 .shape-cell:hover { transform: scale(1.08); border-color: #3b82f6; }
 .shape-cell.static { cursor: default; }
@@ -265,7 +272,7 @@ body {
 
 /* מסך עקיפה - אנימציה ענקית */
 #overtake-screen {
-  position: fixed; 
+  position: fixed;
   inset: 0;
   background: rgba(255, 255, 255, 0.92);
   z-index: 2000;
@@ -293,17 +300,85 @@ body {
 }
 .overtake-highlight { color: #d97706; }
 
-@keyframes popIn { 
-  0% { transform: scale(0) rotate(-45deg); } 
-  100% { transform: scale(1) rotate(0deg); } 
+@keyframes popIn {
+  0% { transform: scale(0) rotate(-45deg); }
+  100% { transform: scale(1) rotate(0deg); }
 }
-@keyframes slideUp { 
-  0% { transform: translateY(40px); opacity: 0; } 
-  100% { transform: translateY(0); opacity: 1; } 
+@keyframes slideUp {
+  0% { transform: translateY(40px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
 }
-@keyframes fadeOutOvertake { 
-  0%, 75% { opacity: 1; } 
-  100% { opacity: 0; visibility: hidden; } 
+@keyframes fadeOutOvertake {
+  0%, 75% { opacity: 1; }
+  100% { opacity: 0; visibility: hidden; }
+}
+
+/* מסך כישלון חדש - עצירה של 5 שניות עם פרצוף עצוב */
+#fail-screen {
+  position: fixed;
+  inset: 0;
+  background: rgba(51, 65, 85, 0.55);
+  backdrop-filter: blur(6px);
+  z-index: 2500;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+#fail-screen.active {
+  display: flex;
+  animation: failFadeIn 0.3s ease-out;
+}
+
+.fail-card {
+  background: #ffffff;
+  border-radius: 28px;
+  padding: 48px 56px;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+  border: 3px solid #fecaca;
+}
+
+.fail-face {
+  font-size: 90px;
+  animation: failShake 0.6s ease-in-out;
+  margin-bottom: 8px;
+}
+
+.fail-title {
+  font-size: 30px;
+  font-weight: bold;
+  color: #dc2626;
+  margin-bottom: 10px;
+}
+
+.fail-sub {
+  font-size: 15px;
+  color: #64748b;
+  margin: 0 0 4px 0;
+}
+
+#fail-countdown {
+  font-size: 56px;
+  font-weight: bold;
+  color: #ef4444;
+  line-height: 1.1;
+  animation: countPulse 1s infinite;
+}
+
+@keyframes failFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes failShake {
+  0%, 100% { transform: rotate(0deg); }
+  20% { transform: rotate(-8deg); }
+  40% { transform: rotate(8deg); }
+  60% { transform: rotate(-6deg); }
+  80% { transform: rotate(6deg); }
+}
+@keyframes countPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.75; }
 }
 
 /* התראות קטנות */
@@ -321,4 +396,5 @@ body {
   #game-screen { flex-direction: column; }
   #sidebar { width: 100%; border-left: none; border-bottom: 1px solid #e2e8f0; }
   #main-area { padding: 16px; }
+  .fail-card { padding: 36px 28px; }
 }

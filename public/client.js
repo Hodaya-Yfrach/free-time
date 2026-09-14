@@ -21,6 +21,10 @@ const toastContainer = document.getElementById('toast-container');
 const overtakeScreen = document.getElementById('overtake-screen');
 const overtakeName = document.getElementById('overtake-name');
 
+// מסך כישלון חדש
+const failScreen = document.getElementById('fail-screen');
+const failCountdownEl = document.getElementById('fail-countdown');
+
 const findMissingPanel = document.getElementById('mode-find-missing');
 const matchMotionPanel = document.getElementById('mode-match-motion');
 const gridFull = document.getElementById('grid-full');
@@ -44,6 +48,7 @@ let currentLevelTimeLimit = BASE_TIME_MS;
 let timeLeftMs = BASE_TIME_MS;
 
 let timerInterval = null;
+let failCountdownInterval = null;
 let paused = false;
 let awaitingAnswer = false;
 let currentMissingCombo = null;
@@ -67,7 +72,7 @@ function sameCombo(a, b) {
 }
 
 joinBtn.addEventListener('click', () => {
-  myName = nameInput.value.trim() || 'שחקן';
+  myName = nameInput.value.trim() || 'שחקנית';
   roomCode = (roomInput.value.trim() || 'DEFAULT').toUpperCase();
   socket.emit('join-room', { roomCode, name: myName });
 });
@@ -84,13 +89,13 @@ socket.on('leaderboard-update', renderLeaderboard);
 
 socket.on('leader-changed', ({ name }) => {
   // הפעלת האנימציה הענקית למרכז המסך!
-  overtakeName.innerHTML = `<span class="overtake-highlight">${name}</span> עקף ולקח את המדליה!`;
-  
+  overtakeName.innerHTML = `<span class="overtake-highlight">${name}</span> עקפה ולקחה את המדליה!`;
+
   // מסירים ומחזירים את המחלקה כדי לאתחל את האנימציה אם היא כבר פועלת
   overtakeScreen.classList.remove('active');
   void overtakeScreen.offsetWidth; // מאלץ דפדפן לחשב מחדש את התצוגה
   overtakeScreen.classList.add('active');
-  
+
   showToast(`🏅 ${name} עקפה ולקחה את המדליה!`, 'leader');
 });
 
@@ -110,7 +115,7 @@ socket.on('player-left', ({ name }) => {
 
 socket.on('player-paused', ({ name, paused: isPaused }) => {
   if (name !== myName) {
-    showToast(isPaused ? `⏸ ${name} בשיחה עם לקוח` : `▶️ ${name} חזרה למשחק`, 'info');
+    showToast(isPaused ? `⏸ ${name} בהשהיה` : `▶️ ${name} חזרה למשחק`, 'info');
   }
 });
 
@@ -146,11 +151,11 @@ function startTimer() {
   clearInterval(timerInterval);
   timerInterval = setInterval(() => {
     timeLeftMs -= 100;
-    
+
     // הצגת שעון העצר בפורמט שניות עשרוני
     const secsLeft = Math.max(0, timeLeftMs / 1000).toFixed(1);
     clockText.textContent = secsLeft;
-    
+
     // אם נשארו 3 שניות או פחות - השעון מהבהב באדום
     if (timeLeftMs <= 3000) {
       clockTimer.classList.add('clock-urgent');
@@ -178,18 +183,18 @@ function nextQuestion() {
   }
 
   updateHud();
-  
+
   // חישוב דרגת הקושי: כל שלב יורד הזמן מעט (עד למינימום של 3 שניות)
   currentLevelTimeLimit = Math.max(3000, BASE_TIME_MS - ((level - 1) * 800));
   timeLeftMs = currentLevelTimeLimit;
-  
+
   clockText.textContent = (timeLeftMs / 1000).toFixed(1);
   clockTimer.classList.remove('clock-urgent');
   awaitingAnswer = true;
 
   // סוג השאלות קבוע לכל השלב (אי-זוגי: חסר צורה, זוגי: התאמת תנועה)
   const mode = (level % 2 === 1) ? 'find-missing' : 'match-motion';
-  
+
   if (mode === 'find-missing') {
     findMissingPanel.classList.add('active');
     matchMotionPanel.classList.remove('active');
@@ -287,8 +292,27 @@ function failLevel() {
   clearInterval(timerInterval);
   pendingLevelScore = 0;
   questionIndex = 0; // מתחיל את השלב מאפס השאלות
-  showToast('❌ טעות! מתחילים את השלב מחדש', 'fail');
-  nextQuestion();
+  showFailScreen();
+}
+
+// מציג מסך כישלון עם פרצוף עצוב והשהיה של 5 שניות
+// לפני שחוזרים אוטומטית לשלב מחדש
+function showFailScreen() {
+  clearInterval(failCountdownInterval);
+  let secondsLeft = 5;
+  failCountdownEl.textContent = secondsLeft;
+  failScreen.classList.add('active');
+
+  failCountdownInterval = setInterval(() => {
+    secondsLeft -= 1;
+    if (secondsLeft <= 0) {
+      clearInterval(failCountdownInterval);
+      failScreen.classList.remove('active');
+      nextQuestion();
+    } else {
+      failCountdownEl.textContent = secondsLeft;
+    }
+  }, 1000);
 }
 
 pauseBtn.addEventListener('click', () => {
@@ -300,11 +324,11 @@ pauseBtn.addEventListener('click', () => {
     clearInterval(timerInterval);
     pauseOverlay.classList.add('active');
     pauseBtn.textContent = '▶ חזרה למשחק';
-    
+
     // מעדכן את הנתונים במסך ההשהיה המסתיר
     pauseLevelTxt.textContent = level;
     pauseFill.style.width = ((questionIndex - 1) / QUESTIONS_PER_LEVEL * 100) + '%';
-    
+
   } else {
     pauseOverlay.classList.remove('active');
     pauseBtn.textContent = '⏸ השהיה';

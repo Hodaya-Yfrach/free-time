@@ -21,15 +21,25 @@ const SHAPE_PATHS = {
   octagon:  '<polygon points="32,8 68,8 92,32 92,68 68,92 32,92 8,68 8,32" fill="COLOR"/>',
   cross:    '<path d="M38 8 H62 V38 H92 V62 H62 V92 H38 V62 H8 V38 H38 Z" fill="COLOR"/>',
   arrow:    '<path d="M10 42 H55 V20 L92 50 L55 80 V58 H10 Z" fill="COLOR"/>',
-  moon:     '<path d="M62 8 A42 42 0 1 0 62 92 A34 34 0 1 1 62 8 Z" fill="COLOR"/>',
+  moon:     '<path d="M62 8 A42 42 0 1 0 62 92 A34 34 0 1 1 62 8 Z" fill="COLOR" fill-rule="evenodd"/>',
   cloud:    '<path d="M25 68 A18 18 0 0 1 27 33 A24 24 0 0 1 74 30 A18 18 0 0 1 75 68 Z" fill="COLOR"/>',
   bolt:     '<polygon points="55,4 22,56 45,56 38,96 80,42 55,42" fill="COLOR"/>',
   flower:   '<g fill="COLOR"><circle cx="50" cy="26" r="16"/><circle cx="50" cy="74" r="16"/><circle cx="26" cy="50" r="16"/><circle cx="74" cy="50" r="16"/><circle cx="50" cy="50" r="12" fill="white" opacity="0.55"/></g>'
 };
 
+// פונקציה עם הגנה: אם מסיבה כלשהי הצורה לא נמצאת ברשימה,
+// מציגים ריבוע אפור עם סימן שאלה במקום תא ריק לגמרי.
 function shapeSvg(type, color, size) {
   size = size || 60;
-  const inner = SHAPE_PATHS[type].split('COLOR').join(color);
+  const path = SHAPE_PATHS[type];
+  if (!path) {
+    console.warn('צורה לא מוכרת:', type);
+    return `<svg viewBox="0 0 100 100" width="${size}" height="${size}">
+      <rect x="10" y="10" width="80" height="80" rx="10" fill="#e2e8f0"/>
+      <text x="50" y="62" font-size="40" text-anchor="middle" fill="#94a3b8">?</text>
+    </svg>`;
+  }
+  const inner = path.split('COLOR').join(color);
   return `<svg viewBox="0 0 100 100" width="${size}" height="${size}">${inner}</svg>`;
 }
 
