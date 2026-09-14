@@ -1,7 +1,7 @@
 const SHAPE_TYPES = [
-  'circle', 'square', 'triangle', 'star', 'diamond',
-  'heart', 'pentagon', 'hexagon', 'octagon', 'cross',
-  'arrow', 'moon', 'cloud', 'bolt', 'flower'
+  'apple', 'banana', 'watermelon', 'grapes', 'cherry',
+  'carrot', 'strawberry', 'donut', 'pizza', 'corn',
+  'mushroom', 'pineapple', 'orange', 'icecream', 'cupcake'
 ];
 
 const COLOR_PALETTE = [
@@ -10,30 +10,30 @@ const COLOR_PALETTE = [
 ];
 
 const SHAPE_PATHS = {
-  circle:   '<circle cx="50" cy="50" r="38" fill="COLOR"/>',
-  square:   '<rect x="14" y="14" width="72" height="72" rx="10" fill="COLOR"/>',
-  triangle: '<polygon points="50,10 90,85 10,85" fill="COLOR"/>',
-  star:     '<polygon points="50,6 61,38 95,38 67,58 78,90 50,70 22,90 33,58 5,38 39,38" fill="COLOR"/>',
-  diamond:  '<polygon points="50,8 92,50 50,92 8,50" fill="COLOR"/>',
-  heart:    '<path d="M50 88 L14 54 C-4 36 20 8 42 26 L50 34 L58 26 C80 8 104 36 86 54 Z" fill="COLOR"/>',
-  pentagon: '<polygon points="50,6 95,40 78,90 22,90 5,40" fill="COLOR"/>',
-  hexagon:  '<polygon points="28,10 72,10 95,50 72,90 28,90 5,50" fill="COLOR"/>',
-  octagon:  '<polygon points="32,8 68,8 92,32 92,68 68,92 32,92 8,68 8,32" fill="COLOR"/>',
-  cross:    '<path d="M38 8 H62 V38 H92 V62 H62 V92 H38 V62 H8 V38 H38 Z" fill="COLOR"/>',
-  arrow:    '<path d="M10 42 H55 V20 L92 50 L55 80 V58 H10 Z" fill="COLOR"/>',
-  moon:     '<path d="M62 8 A42 42 0 1 0 62 92 A34 34 0 1 1 62 8 Z" fill="COLOR" fill-rule="evenodd"/>',
-  cloud:    '<path d="M25 68 A18 18 0 0 1 27 33 A24 24 0 0 1 74 30 A18 18 0 0 1 75 68 Z" fill="COLOR"/>',
-  bolt:     '<polygon points="55,4 22,56 45,56 38,96 80,42 55,42" fill="COLOR"/>',
-  flower:   '<g fill="COLOR"><circle cx="50" cy="26" r="16"/><circle cx="50" cy="74" r="16"/><circle cx="26" cy="50" r="16"/><circle cx="74" cy="50" r="16"/><circle cx="50" cy="50" r="12" fill="white" opacity="0.55"/></g>'
+  apple:      '<g fill="COLOR"><path d="M50 92 C22 92 8 68 8 50 C8 28 24 15 42 20 C46 10 54 10 58 20 C76 15 92 28 92 50 C92 68 78 92 50 92 Z"/><rect x="45" y="4" width="8" height="18" rx="4"/></g>',
+  banana:     '<path d="M18 76 C12 54 24 22 56 12 C62 10 66 16 62 21 C38 30 28 54 34 72 C52 82 76 70 83 49 C85 43 94 45 91 53 C79 84 42 94 18 76 Z" fill="COLOR"/>',
+  watermelon: '<path d="M50 50 L50 6 A44 44 0 0 1 88 71 Z" fill="COLOR"/>',
+  grapes:     '<g fill="COLOR"><circle cx="34" cy="34" r="15"/><circle cx="56" cy="30" r="15"/><circle cx="45" cy="54" r="15"/><circle cx="26" cy="60" r="15"/><circle cx="62" cy="58" r="15"/><circle cx="45" cy="80" r="15"/></g>',
+  cherry:     '<g fill="COLOR"><path d="M36 40 C42 16 58 8 68 6" stroke="COLOR" stroke-width="5" fill="none" stroke-linecap="round"/><circle cx="32" cy="66" r="23"/><circle cx="66" cy="70" r="20"/></g>',
+  carrot:     '<path d="M50 8 C60 8 66 18 61 28 L36 90 C31 97 19 92 23 84 L47 22 C42 15 41 8 50 8 Z" fill="COLOR"/>',
+  strawberry: '<path d="M50 92 L14 44 C-2 20 25 -1 50 27 C75 -1 102 20 86 44 Z" fill="COLOR"/>',
+  donut:      '<path d="M50 8 A42 42 0 1 0 50.05 8 Z M50 33 A17 17 0 1 1 49.95 33 Z" fill="COLOR" fill-rule="evenodd"/>',
+  pizza:      '<polygon points="50,8 90,92 10,92" fill="COLOR"/>',
+  corn:       '<rect x="34" y="6" width="32" height="88" rx="16" fill="COLOR"/>',
+  mushroom:   '<g fill="COLOR"><path d="M12 46 A38 38 0 0 1 88 46 Z"/><rect x="37" y="46" width="26" height="42" rx="8"/></g>',
+  pineapple:  '<g fill="COLOR"><ellipse cx="50" cy="62" rx="30" ry="34"/><polygon points="50,2 38,26 50,18 62,26"/></g>',
+  orange:     '<ellipse cx="50" cy="50" rx="40" ry="36" fill="COLOR"/>',
+  icecream:   '<g fill="COLOR"><polygon points="34,52 66,52 50,94"/><circle cx="50" cy="38" r="28"/></g>',
+  cupcake:    '<g fill="COLOR"><path d="M24 54 L76 54 L64 94 L36 94 Z"/><circle cx="50" cy="40" r="28"/></g>'
 };
 
-// פונקציה עם הגנה: אם מסיבה כלשהי הצורה לא נמצאת ברשימה,
+// פונקציה עם הגנה: אם מסיבה כלשהי המאכל לא נמצא ברשימה,
 // מציגים ריבוע אפור עם סימן שאלה במקום תא ריק לגמרי.
 function shapeSvg(type, color, size) {
   size = size || 60;
   const path = SHAPE_PATHS[type];
   if (!path) {
-    console.warn('צורה לא מוכרת:', type);
+    console.warn('מאכל לא מוכר:', type);
     return `<svg viewBox="0 0 100 100" width="${size}" height="${size}">
       <rect x="10" y="10" width="80" height="80" rx="10" fill="#e2e8f0"/>
       <text x="50" y="62" font-size="40" text-anchor="middle" fill="#94a3b8">?</text>
