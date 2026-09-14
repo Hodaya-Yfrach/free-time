@@ -44,9 +44,9 @@ const QUESTIONS_PER_LEVEL = 3;
 
 // זמנים דינמיים לפי קושי
 // הוספנו 5 שניות גם לזמן ההתחלתי וגם לרצפת המינימום, כדי שהמשחק
-// לא ירגיש מהיר מדי גם בשלבים המתקדמים
-const BASE_TIME_MS = 13000; // 8 שניות + 5 שניות נוספות
-const MIN_TIME_MS = 8000;   // 3 שניות + 5 שניות נוספות
+// לא ירגיש מהיר מדי גם בשלבים המתקדמים (עודכן למשחק עד 20 צורות)
+const BASE_TIME_MS = 15000; 
+const MIN_TIME_MS = 6000;   
 let currentLevelTimeLimit = BASE_TIME_MS;
 let timeLeftMs = BASE_TIME_MS;
 
@@ -59,7 +59,7 @@ let awaitingAnswer = false;
 let currentMissingCombo = null;
 
 function shapeCountForLevel(lvl) {
-  return Math.min(10, lvl + 4);
+  return Math.min(20, lvl + 4); // מותאם ל-20 צורות
 }
 
 function allCombos() {
@@ -208,8 +208,8 @@ function nextQuestion() {
 
   updateHud();
 
-  // חישוב דרגת הקושי: כל שלב יורד הזמן מעט (עד למינימום של 8 שניות)
-  currentLevelTimeLimit = Math.max(MIN_TIME_MS, BASE_TIME_MS - ((level - 1) * 800));
+  // חישוב דרגת הקושי: כל שלב יורד הזמן מעט
+  currentLevelTimeLimit = Math.max(MIN_TIME_MS, BASE_TIME_MS - ((level - 1) * 600));
   timeLeftMs = currentLevelTimeLimit;
 
   clockText.textContent = (timeLeftMs / 1000).toFixed(1);
