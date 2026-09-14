@@ -43,12 +43,17 @@ let questionIndex = 0;
 const QUESTIONS_PER_LEVEL = 3;
 
 // זמנים דינמיים לפי קושי
-const BASE_TIME_MS = 8000; // מתחילים קל (8 שניות)
+// הוספנו 5 שניות גם לזמן ההתחלתי וגם לרצפת המינימום, כדי שהמשחק
+// לא ירגיש מהיר מדי גם בשלבים המתקדמים
+const BASE_TIME_MS = 13000; // 8 שניות + 5 שניות נוספות
+const MIN_TIME_MS = 8000;   // 3 שניות + 5 שניות נוספות
 let currentLevelTimeLimit = BASE_TIME_MS;
 let timeLeftMs = BASE_TIME_MS;
 
 let timerInterval = null;
 let failCountdownInterval = null;
+let overtakeResumeTimeout = null;
+const OVERTAKE_FREEZE_MS = 3500; // תואם בדיוק לאורך אנימציית העקיפה ב-CSS
 let paused = false;
 let awaitingAnswer = false;
 let currentMissingCombo = null;
@@ -97,7 +102,25 @@ socket.on('leader-changed', ({ name }) => {
   overtakeScreen.classList.add('active');
 
   showToast(`🏅 ${name} עקפה ולקחה את המדליה!`, 'leader');
+
+  // באג שתוקן: מסך העקיפה חוסם את כל המסך ל-3.5 שניות, אבל הטיימר
+  // המשיך לרוץ מתחתיו - כך שכשהאנימציה נגמרת השחקנית כבר "איחרה"
+  // בלי שהייתה לה בכלל אפשרות ללחוץ על משהו. עכשיו עוצרים את הטיימר
+  // בדיוק לאורך זמן האנימציה, וממשיכים אותו בדיוק מאיפה שהוא עצר.
+  freezeTimerForOvertake();
 });
+
+function freezeTimerForOvertake() {
+  if (awaitingAnswer && !paused) {
+    clearInterval(timerInterval);
+  }
+  clearTimeout(overtakeResumeTimeout);
+  overtakeResumeTimeout = setTimeout(() => {
+    if (awaitingAnswer && !paused) {
+      startTimer();
+    }
+  }, OVERTAKE_FREEZE_MS);
+}
 
 socket.on('level-up', ({ name, level: lvl }) => {
   if (name !== myName) {
@@ -171,6 +194,7 @@ function startTimer() {
 }
 
 function nextQuestion() {
+  clearTimeout(overtakeResumeTimeout);
   questionIndex++;
   if (questionIndex > QUESTIONS_PER_LEVEL) {
     score += pendingLevelScore;
@@ -184,8 +208,8 @@ function nextQuestion() {
 
   updateHud();
 
-  // חישוב דרגת הקושי: כל שלב יורד הזמן מעט (עד למינימום של 3 שניות)
-  currentLevelTimeLimit = Math.max(3000, BASE_TIME_MS - ((level - 1) * 800));
+  // חישוב דרגת הקושי: כל שלב יורד הזמן מעט (עד למינימום של 8 שניות)
+  currentLevelTimeLimit = Math.max(MIN_TIME_MS, BASE_TIME_MS - ((level - 1) * 800));
   timeLeftMs = currentLevelTimeLimit;
 
   clockText.textContent = (timeLeftMs / 1000).toFixed(1);
@@ -250,11 +274,19 @@ function renderMatchMotion() {
     : { shape: randomItem(pool.filter((s) => s !== target.shape)), color: target.color };
 
   const options = [correctOption];
-  while (options.length < 4) {
+  let attempts = 0;
+  while (options.length < 4 && attempts < 300) {
+    attempts++;
     const candidate = { shape: randomItem(pool), color: randomItem(COLOR_PALETTE) };
     const matchesRule = rule === 'shape' ? candidate.shape === target.shape : candidate.color === target.color;
     const duplicate = options.some((o) => sameCombo(o, candidate));
     if (!matchesRule && !duplicate) options.push(candidate);
+  }
+  // רשת ביטחון: במקרה קצה שבו לא נמצאו מספיק אפשרויות שונות
+  // (למשל מעט מאוד צורות בשלב נמוך), משלימים בלי לאפשר שני ריבועים זהים
+  while (options.length < 4) {
+    const fallback = { shape: randomItem(pool), color: randomItem(COLOR_PALETTE) };
+    if (!options.some((o) => sameCombo(o, fallback))) options.push(fallback);
   }
 
   optionsRow.innerHTML = '';
@@ -290,6 +322,7 @@ function handleAnswer(isCorrect) {
 function failLevel() {
   awaitingAnswer = false;
   clearInterval(timerInterval);
+  clearTimeout(overtakeResumeTimeout);
   pendingLevelScore = 0;
   questionIndex = 0; // מתחיל את השלב מאפס השאלות
   showFailScreen();
@@ -322,6 +355,7 @@ pauseBtn.addEventListener('click', () => {
 
   if (paused) {
     clearInterval(timerInterval);
+    clearTimeout(overtakeResumeTimeout);
     pauseOverlay.classList.add('active');
     pauseBtn.textContent = '▶ חזרה למשחק';
 
