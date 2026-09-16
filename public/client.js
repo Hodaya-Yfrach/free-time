@@ -47,9 +47,9 @@ let pendingLevelScore = 0;
 let questionIndex = 0;
 const QUESTIONS_PER_LEVEL = 3;
 
-// זמנים דינמיים לפי קושי - עכשיו הזמן עולה יחד עם כמות הצורות במקום לרדת!
+// זמנים דינמיים לפי קושי - הזמן עולה יחד עם כמות הצורות במקום לרדת!
 // כך ברמות הקשות (הרבה צורות) יש הרבה יותר זמן לסרוק את הלוח,
-// והמשחק נשאר קליל וכיפי גם ברמות גבוהות (לפחות 20 שניות יותר מהמינימום הישן).
+// והמשחק נשאר קליל וכיפי גם ברמות גבוהות.
 const BASE_TIME_MS = 12000;       // זמן בסיס בשלב הראשון (5 צורות)
 const TIME_PER_SHAPE_MS = 1000;   // כל צורה נוספת בלוח מוסיפה שנייה שלמה
 const BASE_SHAPE_COUNT = 5;       // כמות הצורות בשלב הראשון
@@ -357,9 +357,10 @@ function handleAnswer(isCorrect) {
   clearInterval(timerInterval);
 
   if (isCorrect) {
-    // ניקוד יחסי לזמן שעבר מהטיימר הספציפי של השלב
-    const reactionSeconds = (currentLevelTimeLimit - timeLeftMs) / 1000;
-    const points = Math.max(1, Math.round(7 - reactionSeconds));
+    // ניקוד קופצני וכיפי: השניות שנשארו בטיימר, כפול 2 -
+    // ככל שעונים מהר יותר, הניקוד קופץ הרבה יותר גבוה!
+    const secondsLeft = Math.max(0, timeLeftMs / 1000);
+    const points = Math.max(2, Math.round(secondsLeft * 2));
     pendingLevelScore += points;
     nextQuestion();
   } else {
@@ -371,29 +372,16 @@ function failLevel() {
   awaitingAnswer = false;
   clearInterval(timerInterval);
   clearTimeout(overtakeResumeTimeout);
+
+  // גם בטעות מקבלים "נחמה" קטנה של 2 נקודות במקום לאבד הכל -
+  // פחות מתסכל, יותר כיף להמשיך לשחק
+  score += 2;
+  updateHud();
+  socket.emit('score-update', { score, level });
+
   pendingLevelScore = 0;
   questionIndex = 0; // מתחיל את השלב מאפס השאלות
   showFailScreen();
-}
-
-// מציג מסך כישלון עם פרצוף עצוב והשהיה של 5 שניות
-// לפני שחוזרים אוטומטית לשלב מחדש
-function showFailScreen() {
-  clearInterval(failCountdownInterval);
-  let secondsLeft = 5;
-  failCountdownEl.textContent = secondsLeft;
-  failScreen.classList.add('active');
-
-  failCountdownInterval = setInterval(() => {
-    secondsLeft -= 1;
-    if (secondsLeft <= 0) {
-      clearInterval(failCountdownInterval);
-      failScreen.classList.remove('active');
-      nextQuestion();
-    } else {
-      failCountdownEl.textContent = secondsLeft;
-    }
-  }, 1000);
 }
 
 pauseBtn.addEventListener('click', () => {
