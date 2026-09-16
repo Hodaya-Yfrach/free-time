@@ -33,6 +33,11 @@ const targetShapeEl = document.getElementById('target-shape');
 const optionsRow = document.getElementById('options-row');
 const matchRuleTitle = document.getElementById('match-rule-title');
 
+// שלב חדש: התאמת צללית
+const matchShadowPanel = document.getElementById('mode-match-shadow');
+const shadowTargetEl = document.getElementById('shadow-target-shape');
+const shadowOptionsRow = document.getElementById('shadow-options-row');
+
 let myName = '';
 let roomCode = '';
 
@@ -42,13 +47,21 @@ let pendingLevelScore = 0;
 let questionIndex = 0;
 const QUESTIONS_PER_LEVEL = 3;
 
-// זמנים דינמיים לפי קושי
-// הוספנו 5 שניות גם לזמן ההתחלתי וגם לרצפת המינימום, כדי שהמשחק
-// לא ירגיש מהיר מדי גם בשלבים המתקדמים (עודכן למשחק עד 20 צורות)
-const BASE_TIME_MS = 15000; 
-const MIN_TIME_MS = 6000;   
+// זמנים דינמיים לפי קושי - עכשיו הזמן עולה יחד עם כמות הצורות במקום לרדת!
+// כך ברמות הקשות (הרבה צורות) יש הרבה יותר זמן לסרוק את הלוח,
+// והמשחק נשאר קליל וכיפי גם ברמות גבוהות (לפחות 20 שניות יותר מהמינימום הישן).
+const BASE_TIME_MS = 12000;       // זמן בסיס בשלב הראשון (5 צורות)
+const TIME_PER_SHAPE_MS = 1000;   // כל צורה נוספת בלוח מוסיפה שנייה שלמה
+const BASE_SHAPE_COUNT = 5;       // כמות הצורות בשלב הראשון
+const MAX_TIME_MS = 27000;        // תקרת זמן כדי שלא ימתח יותר מדי
 let currentLevelTimeLimit = BASE_TIME_MS;
 let timeLeftMs = BASE_TIME_MS;
+
+function timeLimitForLevel(lvl) {
+  const shapeCount = shapeCountForLevel(lvl);
+  const extraTime = (shapeCount - BASE_SHAPE_COUNT) * TIME_PER_SHAPE_MS;
+  return Math.min(MAX_TIME_MS, BASE_TIME_MS + extraTime);
+}
 
 let timerInterval = null;
 let failCountdownInterval = null;
@@ -208,25 +221,31 @@ function nextQuestion() {
 
   updateHud();
 
-  // חישוב דרגת הקושי: כל שלב יורד הזמן מעט
-  currentLevelTimeLimit = Math.max(MIN_TIME_MS, BASE_TIME_MS - ((level - 1) * 600));
+  // חישוב זמן השלב: יותר צורות בלוח = יותר זמן לחשוב, כדי שהמשחק יישאר כיפי
+  currentLevelTimeLimit = timeLimitForLevel(level);
   timeLeftMs = currentLevelTimeLimit;
 
   clockText.textContent = (timeLeftMs / 1000).toFixed(1);
   clockTimer.classList.remove('clock-urgent');
   awaitingAnswer = true;
 
-  // סוג השאלות קבוע לכל השלב (אי-זוגי: חסר צורה, זוגי: התאמת תנועה)
-  const mode = (level % 2 === 1) ? 'find-missing' : 'match-motion';
+  // סוג השאלות מתחלף כל שלב במחזור של 3: חסר צורה -> התאמת תנועה -> התאמת צללית
+  const modeCycle = ['find-missing', 'match-motion', 'match-shadow'];
+  const mode = modeCycle[(level - 1) % modeCycle.length];
+
+  findMissingPanel.classList.remove('active');
+  matchMotionPanel.classList.remove('active');
+  matchShadowPanel.classList.remove('active');
 
   if (mode === 'find-missing') {
     findMissingPanel.classList.add('active');
-    matchMotionPanel.classList.remove('active');
     renderFindMissing();
-  } else {
+  } else if (mode === 'match-motion') {
     matchMotionPanel.classList.add('active');
-    findMissingPanel.classList.remove('active');
     renderMatchMotion();
+  } else {
+    matchShadowPanel.classList.add('active');
+    renderMatchShadow();
   }
 
   startTimer();
@@ -300,6 +319,35 @@ function renderMatchMotion() {
       handleAnswer(isCorrect);
     });
     optionsRow.appendChild(cell);
+  });
+}
+
+// שלב חדש: התאמת צללית
+// מוצגת צורה צבעונית מלאה, ולמטה 4 צלליות כהות (אותה צורה, בלי צבע) -
+// צריך למצוא את הצללית ששייכת לאותו סוג מאכל כמו הצורה שלמעלה.
+function renderMatchShadow() {
+  const shapeCount = Math.max(4, shapeCountForLevel(level));
+  const pool = shuffle(SHAPE_TYPES).slice(0, Math.min(shapeCount, SHAPE_TYPES.length));
+
+  const targetShape = randomItem(pool);
+  const targetColor = randomItem(COLOR_PALETTE);
+  shadowTargetEl.innerHTML = shapeSvg(targetShape, targetColor, 80);
+
+  // הצללית מוצגת בגוון כהה אחיד - רק הצורה חשובה, לא הצבע
+  const SHADOW_COLOR = '#1e293b';
+  const wrongShapes = shuffle(pool.filter((s) => s !== targetShape)).slice(0, 3);
+  const options = shuffle([targetShape, ...wrongShapes]);
+
+  shadowOptionsRow.innerHTML = '';
+  options.forEach((shapeType) => {
+    const cell = document.createElement('div');
+    cell.className = 'shape-cell option-cell';
+    cell.innerHTML = shapeSvg(shapeType, SHADOW_COLOR, 60);
+    cell.addEventListener('click', () => {
+      if (!awaitingAnswer) return;
+      handleAnswer(shapeType === targetShape);
+    });
+    shadowOptionsRow.appendChild(cell);
   });
 }
 
