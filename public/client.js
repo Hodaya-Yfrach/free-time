@@ -384,6 +384,26 @@ function failLevel() {
   showFailScreen();
 }
 
+// מציג מסך כישלון עם פרצוף עצוב והשהיה של 5 שניות
+// לפני שחוזרים אוטומטית לשלב מחדש
+function showFailScreen() {
+  clearInterval(failCountdownInterval);
+  let secondsLeft = 5;
+  failCountdownEl.textContent = secondsLeft;
+  failScreen.classList.add('active');
+
+  failCountdownInterval = setInterval(() => {
+    secondsLeft -= 1;
+    if (secondsLeft <= 0) {
+      clearInterval(failCountdownInterval);
+      failScreen.classList.remove('active');
+      nextQuestion();
+    } else {
+      failCountdownEl.textContent = secondsLeft;
+    }
+  }, 1000);
+}
+
 pauseBtn.addEventListener('click', () => {
   paused = !paused;
   const pauseFill = document.getElementById('pause-progress-fill');
