@@ -18,6 +18,12 @@ const LANES = 5;              // מספר הנתיבים בכביש
 const BASE_SPEED = 190;       // פיקסלים לשנייה בשלב 1
 const CAR_WIDTH = 46;
 const CAR_HEIGHT = 70;
+const OBSTACLE_HEIGHT = 18;   // אורך מכשול קטן יותר כדי לא לחסום את המכשיר כולו
+const ROW_GAP = CAR_HEIGHT + 24; // רווח של מכונית שלמה בין קבוצות מכשולים
+const VEHICLE_GAP = CAR_HEIGHT * 2; // מרחק מינימלי של 2 רכבים בין מכשולים בגובה
+const TOP_SPAWN_MARGIN = 180;  // לא נייצר שורה חדשה כשהיא עדיין כמעט נראית בתחילת המסך
+const OFFSCREEN_CLEANUP = 900; // שומרים את המכשולים על המסך הרבה יותר זמן כדי שלא ייעלמו ב"גל" כל כמה שניות
+const MIN_VISIBLE_OBSTACLES = 8; // לא נותנים למסך להתרוקן לגמרי
 const STEER_SPEED = 620;      // כמה מהר המכונית מחליקה לעבר היעד
 
 export default function CarGame({ engine }) {
@@ -30,6 +36,7 @@ export default function CarGame({ engine }) {
     targetX: 0.5,
     obstacles: [],
     spawnTimer: 0,
+    nextSpawnY: -200,
     roadOffset: 0,
     started: false,
   });
@@ -43,6 +50,7 @@ export default function CarGame({ engine }) {
   useEffect(() => {
     world.current.obstacles = [];
     world.current.spawnTimer = 0.6;
+    world.current.nextSpawnY = -200;
     world.current.carX = 0.5;
     world.current.targetX = 0.5;
   }, [roundKey]);
@@ -68,10 +76,18 @@ export default function CarGame({ engine }) {
 
       // הולדת שורת מכשולים חדשה
       w.spawnTimer -= dt;
-      if (w.spawnTimer <= 0 && w.obstacles.length < MAX_OBJECTS_ON_SCREEN) {
-        spawnRow(w, cfg);
-        // ככל שהשלב עולה, השורות צפופות יותר
-        w.spawnTimer = Math.max(0.55, 1.5 - (cfg.level - 1) * 0.08);
+      if (w.spawnTimer <= 0 && w.obstacles.length < MAX_OBJECTS_ON_SCREEN + 5) {
+        const minActiveY = w.obstacles.length
+          ? Math.min(...w.obstacles.map((o) => o.y))
+          : Infinity;
+
+        // רק כאשר השורה העליונה כבר יצאה מהאזור העליון, נייצר את הבאה
+        if (w.obstacles.length === 0 || minActiveY > -TOP_SPAWN_MARGIN) {
+          spawnRow(w, cfg);
+          w.spawnTimer = Math.max(0.32, 0.95 - (cfg.level - 1) * 0.04);
+        } else {
+          w.spawnTimer = 0.1;
+        }
       }
 
       const carTop = height - 40 - CAR_HEIGHT;
@@ -104,7 +120,15 @@ export default function CarGame({ engine }) {
         }
       }
 
-      w.obstacles = w.obstacles.filter((o) => o.y < height + 80);
+      // מחיקת מכשולים רק כשהם עברו את תחתית המסך במרווח משמעותי, כדי לא להעלים את כל הבלוקים בבת אחת.
+      w.obstacles = w.obstacles.filter((o) => o.y < height + OFFSCREEN_CLEANUP);
+
+      // אם המסך התרוקן מדי, מחזירים שורות חדשות מיד כדי לשמור על מכשולים פעילים.
+      if (w.obstacles.length < MIN_VISIBLE_OBSTACLES) {
+        while (w.obstacles.length < MIN_VISIBLE_OBSTACLES && w.obstacles.length < MAX_OBJECTS_ON_SCREEN + 8) {
+          spawnRow(w, cfg);
+        }
+      }
     }
 
     // ------------------------------------------------------------- ציור
@@ -166,19 +190,45 @@ export default function CarGame({ engine }) {
 
 /** שורת מכשולים: כל הנתיבים חסומים חוץ מאחד לפחות */
 function spawnRow(world, config) {
-  const blocked = Math.min(config.hazards, LANES - 1);
-  const lanes = [0, 1, 2, 3, 4].sort(() => Math.random() - 0.5).slice(0, blocked);
+  const minLaneGap = 2;
+  const blocked = Math.max(1, Math.min(config.hazards + 1, LANES - 2));
+  const safeLane = Math.floor(Math.random() * LANES);
+  const candidateLanes = [0, 1, 2, 3, 4].filter((lane) => lane !== safeLane);
+  const lanes = [];
+
+  for (const lane of candidateLanes.sort(() => Math.random() - 0.5)) {
+    const prev = lanes.at(-1);
+    if (prev !== undefined && Math.abs(lane - prev) < minLaneGap) continue;
+    lanes.push(lane);
+    if (lanes.length >= blocked) break;
+  }
+
+  if (lanes.length === 0) {
+    lanes.push(candidateLanes[0] ?? 0);
+  }
+
+  const rowY = world.nextSpawnY;
+  const rowJitter = (Math.random() - 0.5) * 18;
+  world.nextSpawnY = rowY - ROW_GAP - (Math.random() * 10);
+
+  // שורה חדשה תמיד מתחילה מחוץ למסך במיקום יציב, בלי "קפיצה" או "עפיפה".
+  const stableRowY = Math.min(rowY + rowJitter, -200);
 
   lanes.forEach((lane, index) => {
     world.obstacles.push({
       lane,
-      y: -70,
-      height: 46,
+      y: stableRowY + (index * (OBSTACLE_HEIGHT + 6)) + (lane % 2 === 0 ? 2 : -2),
+      height: OBSTACLE_HEIGHT,
       scored: false,
       // רק מכשול אחד בשורה מזכה בנקודות, כדי שהניקוד יהיה "שורה = שאלה"
       isRowLeader: index === 0,
     });
   });
+
+  // מאט את המשך השורה הבאה כדי שלא ייווצר חפיפה אנכית, אלא מרווח של 2 רכבים לפחות
+  if (world.nextSpawnY < -200) {
+    world.nextSpawnY -= VEHICLE_GAP;
+  }
 }
 
 /** רקע הכביש עם קווי הפרדה שזזים — זה מה שיוצר את תחושת הנסיעה */
