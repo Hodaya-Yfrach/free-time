@@ -78,11 +78,11 @@ export function levelConfig(level) {
     level: l,
     // משחק הצורות: מתחיל ב-4 צורות ומטפס עד 12
     objectsOnScreen: Math.min(3 + l, MAX_OBJECTS_ON_SCREEN),
-    // זמן לשאלה: 8 שניות בשלב 1, יורד עד רצפה של 2.5 שניות
-    questionMs: Math.max(2500, 8000 - (l - 1) * 450),
-    // מכפיל מהירות למשחקי הקנבס (מכונית / דולר)
-    speedFactor: 1 + (l - 1) * 0.18,
+    // זמן לשאלה: מתחיל ב-16 שניות, לא יורד מתחת ל-12 בשלב מתקדם
+    questionMs: Math.max(12000, 16000 - (l - 1) * 700),
+    // מכפיל מהירות למשחקי הקנבס (מכונית / דולר) — עלייה יציבה בין שלבים
+    speedFactor: 1 + (l - 1) * 0.12,
     // כמה מכשולים/שודדים פעילים במקביל
-    hazards: Math.min(2 + l, MAX_OBJECTS_ON_SCREEN),
+    hazards: Math.min(1 + Math.ceil(l / 2), MAX_OBJECTS_ON_SCREEN),
   };
 }
