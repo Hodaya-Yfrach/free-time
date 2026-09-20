@@ -31,7 +31,7 @@ function buildFindMissing(config) {
 
   return {
     mode: 'findMissing',
-    title: 'מה חסר בלוח התחתון?',
+    title: 'מה חסר בלוח התחתון?!',
     full,
     partial,
     correctKey: missing.key,
