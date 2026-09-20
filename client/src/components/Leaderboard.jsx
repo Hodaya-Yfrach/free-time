@@ -20,15 +20,15 @@ export default function Leaderboard({ players, myName }) {
 
         return (
           <li key={player.id} className={classes}>
-            <span className="leaderboard__place">{player.place}</span>
+            {/* המקום מוצג כתג עגול בולט - זה מה שחשוב לראות ראשון */}
+            <span className="leaderboard__badge">{player.place}</span>
             <span className="leaderboard__name">
               {player.name}
               {player.paused && <span className="leaderboard__paused"> ⏸</span>}
+              <small className="leaderboard__level">שלב {player.level}</small>
             </span>
-            <span className="leaderboard__stats">
-              <strong>{player.points}</strong>
-              <small>שלב {player.level}</small>
-            </span>
+            {/* הניקוד מוצג עדין ומוקטן בכוונה - הדגש הוא על המקום, לא על המספר */}
+            <span className="leaderboard__points">{player.points}</span>
           </li>
         );
       })}

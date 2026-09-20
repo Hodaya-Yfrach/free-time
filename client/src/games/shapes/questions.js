@@ -3,7 +3,7 @@
 //  ----------------------------------------------------------------------
 //  שלושה מצבי משחק, בדיוק כמו בגרסה המקורית:
 //    findMissing  — מה חסר בריבוע השני
-//    matchCategory— איזה מאכל שייך לאותה קטגוריה
+//    matchCategory— איזו חיה שייכת לאותה קטגוריה
 //    matchShadow  — איזו צללית מתאימה לצורה
 //
 //  מספר הצורות על המסך מגיע מ-levelConfig ועולה עד 12.
@@ -43,18 +43,18 @@ function buildMatchCategory(config) {
   const target = makeItem(randomItem(SHAPE_TYPES));
   const targetCategory = CATEGORY_OF[target.type];
 
-  // תשובה נכונה: מאכל אחר מאותה קטגוריה
+  // תשובה נכונה: חיה אחרת מאותה קטגוריה
   const sameFamily = CATEGORIES[targetCategory].items.filter((t) => t !== target.type);
   const correct = makeItem(randomItem(sameFamily));
 
-  // מסיחים: מאכלים מקטגוריות אחרות
+  // מסיחים: חיות מקטגוריות אחרות
   const others = SHAPE_TYPES.filter((t) => CATEGORY_OF[t] !== targetCategory);
   const optionsCount = Math.min(3 + Math.floor(config.level / 3), 6);
   const distractors = pickMany(others, optionsCount - 1).map(makeItem);
 
   return {
     mode: 'matchCategory',
-    title: `איזה מאכל שייך לקבוצת ${CATEGORIES[targetCategory].label}?`,
+    title: `איזו חיה שייכת לקבוצת ${CATEGORIES[targetCategory].label}?`,
     target,
     options: shuffle([correct, ...distractors]),
     correctKey: correct.key,

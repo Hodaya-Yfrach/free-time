@@ -8,7 +8,7 @@ export const GAMES = [
   {
     id: 'shapes',
     name: 'קרב הצורות',
-    icon: '🍎',
+    icon: '🦁',
     tagline: 'זיכרון, התאמה וזריזות',
     description: 'מצאי מה חסר, התאימי לפי קטגוריה וזהי צלליות. עד 12 צורות במקביל.',
     accent: '#3b82f6',

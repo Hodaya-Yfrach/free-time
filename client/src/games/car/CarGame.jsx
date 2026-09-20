@@ -14,8 +14,8 @@ import { useEffect, useRef } from 'react';
 import { useCanvasStage, roundRect } from '../useCanvasStage.js';
 import { MAX_OBJECTS_ON_SCREEN } from '../../shared/scoring.js';
 
-const LANES = 5;              // מספר הנתיבים בכביש
-const BASE_SPEED = 190;       // פיקסלים לשנייה בשלב 1
+// מספר הנתיבים כבר לא קבוע - הוא מגיע מ-config.lanes ועולה עם השלב (עד 6, ר' scoring.js).
+const BASE_SPEED = 150;       // פיקסלים לשנייה בשלב 1 (הואט קצת - היה 190, הרגיש לא יציב)
 const CAR_WIDTH = 46;
 const CAR_HEIGHT = 70;
 const OBSTACLE_HEIGHT = 18;   // אורך מכשול קטן יותר כדי לא לחסום את המכשיר כולו
@@ -27,7 +27,17 @@ const MIN_VISIBLE_OBSTACLES = 8; // לא נותנים למסך להתרוקן ל
 const STEER_SPEED = 620;      // כמה מהר המכונית מחליקה לעבר היעד
 
 export default function CarGame({ engine }) {
-  const { config, frozen, roundKey, registerSuccess, registerFailure } = engine;
+  const {
+    config, frozen, roundKey, registerSuccess, registerFailure, ownedPrizes,
+    powerHandlerRef, shieldsRef, shieldGraceUntilRef,
+  } = engine;
+
+  // הפרס העיצובי האחרון שנרכש עבור המכונית (אם נרכש) - צבע/דגם חלופי
+  const equippedRef = useRef(null);
+  useEffect(() => {
+    const carPrizes = (ownedPrizes || []).filter((p) => p.appliesTo === 'car');
+    equippedRef.current = carPrizes.length ? carPrizes[carPrizes.length - 1] : null;
+  }, [ownedPrizes]);
 
   // כל מצב המשחק יושב ב-ref: הוא משתנה 60 פעמים בשנייה
   // ואין שום סיבה לגרום ל-React לרנדר מחדש בכל פריים.
@@ -39,6 +49,7 @@ export default function CarGame({ engine }) {
     nextSpawnY: -200,
     roadOffset: 0,
     started: false,
+    fx: { slow: 0, freeze: 0, ghost: 0, mini: 0, sport: 0, gps: 0 },
   });
 
   const frozenRef = useRef(frozen);
@@ -55,23 +66,28 @@ export default function CarGame({ engine }) {
     world.current.targetX = 0.5;
   }, [roundKey]);
 
-  const { canvasRef } = useCanvasStage((ctx, size, dt) => {
+  const { canvasRef, sizeRef } = useCanvasStage((ctx, size, dt) => {
     const { width, height } = size;
     if (!width || !height) return;
 
     const w = world.current;
     const cfg = configRef.current;
-    const speed = BASE_SPEED * cfg.speedFactor;
+    const speedMultiplier = w.fx.freeze > 0 ? 0 : w.fx.slow > 0 ? 0.5 : 1;
+    const speed = BASE_SPEED * cfg.speedFactor * speedMultiplier;
+    const carWidth = CAR_WIDTH * (w.fx.mini > 0 ? 0.5 : 1);
 
     // ---------------------------------------------------------- עדכון מצב
     if (!frozenRef.current) {
+      for (const key of Object.keys(w.fx)) {
+        if (w.fx[key] > 0) w.fx[key] = Math.max(0, w.fx[key] - dt);
+      }
       w.roadOffset = (w.roadOffset + speed * dt) % 60;
 
       // החלקה לעבר היעד שנקבע בלחיצה
       const targetPx = w.targetX * width;
       const carPx = w.carX * width;
       const diff = targetPx - carPx;
-      const step = Math.sign(diff) * Math.min(Math.abs(diff), STEER_SPEED * dt);
+      const step = Math.sign(diff) * Math.min(Math.abs(diff), STEER_SPEED * (w.fx.sport > 0 ? 1.8 : 1) * dt);
       w.carX = (carPx + step) / width;
 
       // הולדת שורת מכשולים חדשה
@@ -92,21 +108,23 @@ export default function CarGame({ engine }) {
 
       const carTop = height - 40 - CAR_HEIGHT;
       const carBottom = height - 40;
-      const carLeft = w.carX * width - CAR_WIDTH / 2;
-      const carRight = carLeft + CAR_WIDTH;
+      const carLeft = w.carX * width - carWidth / 2;
+      const carRight = carLeft + carWidth;
 
       for (const obs of w.obstacles) {
         obs.y += speed * dt;
 
-        const obsLeft = obs.lane * (width / LANES) + 6;
-        const obsRight = obsLeft + width / LANES - 12;
+        const obsLeft = obs.lane * (width / cfg.lanes) + 6;
+        const obsRight = obsLeft + width / cfg.lanes - 12;
 
         // התנגשות
         const overlapX = carRight > obsLeft && carLeft < obsRight;
         const overlapY = carBottom > obs.y && carTop < obs.y + obs.height;
-        if (overlapX && overlapY) {
-          registerFailure();
-          return;
+        if (overlapX && overlapY && w.fx.ghost <= 0 && !obs.scored) {
+          if (registerFailure()) return;
+          obs.scored = true;
+          obs.y = height + OFFSCREEN_CLEANUP;
+          continue;
         }
 
         // עברנו את השורה בשלום
@@ -132,14 +150,16 @@ export default function CarGame({ engine }) {
     }
 
     // ------------------------------------------------------------- ציור
-    drawRoad(ctx, width, height, w.roadOffset);
+    drawRoad(ctx, width, height, w.roadOffset, cfg.lanes);
+
+    if (w.fx.gps > 0) drawSafeLane(ctx, width, height, w.obstacles, cfg.lanes);
 
     ctx.font = '30px serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
 
     for (const obs of w.obstacles) {
-      const laneWidth = width / LANES;
+      const laneWidth = width / cfg.lanes;
       const x = obs.lane * laneWidth + 6;
       const cellWidth = laneWidth - 12;
 
@@ -150,11 +170,36 @@ export default function CarGame({ engine }) {
       ctx.fillText('🚧', x + cellWidth / 2, obs.y + obs.height / 2);
     }
 
-    // המכונית
+    // המכונית - כולל "פרס" עיצובי אם נרכש (הילת צבע + אמוג'י חלופי)
     const carCx = w.carX * width;
     const carCy = height - 40 - CAR_HEIGHT / 2;
-    ctx.font = `${CAR_HEIGHT}px serif`;
-    ctx.fillText('🚗', carCx, carCy);
+    const equipped = equippedRef.current;
+
+    if (equipped?.value?.color) {
+      ctx.save();
+      ctx.globalAlpha = 0.35;
+      ctx.fillStyle = equipped.value.color;
+      ctx.beginPath();
+      ctx.arc(carCx, carCy, CAR_HEIGHT * 0.62, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    if (shieldsRef.current > 0 || performance.now() < shieldGraceUntilRef.current) {
+      ctx.strokeStyle = 'rgba(96,165,250,0.9)';
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      ctx.arc(carCx, carCy, CAR_HEIGHT * 0.7, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.save();
+    ctx.globalAlpha = w.fx.ghost > 0 ? 0.5 : 1;
+    ctx.font = `${CAR_HEIGHT * (w.fx.mini > 0 ? 0.5 : 1)}px serif`;
+    ctx.fillText(equipped?.value?.emoji || '🚗', carCx, carCy);
+    ctx.restore();
+
+    drawEffects(ctx, w.fx);
 
     // קו מנחה עדין אל היעד שנבחר
     if (Math.abs(w.targetX - w.carX) > 0.01) {
@@ -168,6 +213,29 @@ export default function CarGame({ engine }) {
       ctx.setLineDash([]);
     }
   }, []);
+
+  useEffect(() => {
+    powerHandlerRef.current = (item) => {
+      const w = world.current;
+      const seconds = item.params?.seconds || 0;
+
+      if (item.effect === 'slow_road') { w.fx.slow = seconds; return true; }
+      if (item.effect === 'freeze_road') { w.fx.freeze = seconds; return true; }
+      if (item.effect === 'ghost_car') { w.fx.ghost = seconds; return true; }
+      if (item.effect === 'mini_car') { w.fx.mini = seconds; return true; }
+      if (item.effect === 'sport_steer') { w.fx.sport = seconds; return true; }
+      if (item.effect === 'gps') { w.fx.gps = seconds; return true; }
+
+      if (item.effect === 'sweeper') {
+        const carBottomY = sizeRef.current.height - 40;
+        const before = w.obstacles.length;
+        w.obstacles = w.obstacles.filter((o) => o.y + o.height <= 0 || o.y >= carBottomY);
+        return w.obstacles.length < before;
+      }
+
+      return false;
+    };
+  });
 
   /** לחיצה על הכביש קובעת לאן המכונית תנוע */
   function handlePointer(event) {
@@ -188,12 +256,19 @@ export default function CarGame({ engine }) {
   );
 }
 
-/** שורת מכשולים: כל הנתיבים חסומים חוץ מאחד לפחות */
+/**
+ * שורת מכשולים: כל הנתיבים חסומים חוץ ממינימום נתיב אחד פנוי.
+ * config.lanes = כמות הנתיבים הכוללת בשלב הנוכחי (עד 6).
+ * config.blockedLanes = כמה מהם חסומים בו-זמנית בשורה הזו (עד 3) —
+ * כך תמיד יישאר מספיק מקום לתמרן, גם ברמות הקשות ביותר.
+ */
 function spawnRow(world, config) {
-  const minLaneGap = 2;
-  const blocked = Math.max(1, Math.min(config.hazards + 1, LANES - 2));
-  const safeLane = Math.floor(Math.random() * LANES);
-  const candidateLanes = [0, 1, 2, 3, 4].filter((lane) => lane !== safeLane);
+  const laneCount = config.lanes;
+  const minLaneGap = 2; // רווח של 2 רכבים לפחות בין מכשולים באותה שורה
+  const blocked = Math.max(1, Math.min(config.blockedLanes, laneCount - 2));
+  const safeLane = Math.floor(Math.random() * laneCount);
+  const allLanes = Array.from({ length: laneCount }, (_, i) => i);
+  const candidateLanes = allLanes.filter((lane) => lane !== safeLane);
   const lanes = [];
 
   for (const lane of candidateLanes.sort(() => Math.random() - 0.5)) {
@@ -231,8 +306,48 @@ function spawnRow(world, config) {
   }
 }
 
+const FX_ICONS = { slow: '🐌', freeze: '⏸️', ghost: '👻', mini: '🐜', sport: '🏎️', gps: '🧭' };
+
+function drawEffects(ctx, fx) {
+  ctx.save();
+  ctx.font = '16px sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(255,255,255,0.95)';
+  let x = 12;
+  for (const [key, left] of Object.entries(fx)) {
+    if (left <= 0) continue;
+    ctx.fillText(`${FX_ICONS[key]} ${left.toFixed(1)}`, x, 26);
+    x += 78;
+  }
+  ctx.restore();
+}
+
+function drawSafeLane(ctx, width, height, obstacles, laneCount) {
+  const carTop = height - 40 - CAR_HEIGHT;
+  const laneWidth = width / laneCount;
+  let bestLane = 0;
+  let bestDistance = -1;
+
+  for (let lane = 0; lane < laneCount; lane++) {
+    let nearest = Infinity;
+    for (const o of obstacles) {
+      if (o.lane !== lane || o.y + o.height > carTop) continue;
+      nearest = Math.min(nearest, carTop - (o.y + o.height));
+    }
+    if (nearest > bestDistance) {
+      bestDistance = nearest;
+      bestLane = lane;
+    }
+  }
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(34,197,94,0.22)';
+  ctx.fillRect(bestLane * laneWidth + 6, 0, laneWidth - 12, height);
+  ctx.restore();
+}
+
 /** רקע הכביש עם קווי הפרדה שזזים — זה מה שיוצר את תחושת הנסיעה */
-function drawRoad(ctx, width, height, offset) {
+function drawRoad(ctx, width, height, offset, laneCount) {
   ctx.clearRect(0, 0, width, height);
 
   ctx.fillStyle = '#475569';
@@ -243,8 +358,8 @@ function drawRoad(ctx, width, height, offset) {
   ctx.setLineDash([26, 34]);
   ctx.lineDashOffset = -offset;
 
-  for (let lane = 1; lane < LANES; lane++) {
-    const x = lane * (width / LANES);
+  for (let lane = 1; lane < laneCount; lane++) {
+    const x = lane * (width / laneCount);
     ctx.beginPath();
     ctx.moveTo(x, 0);
     ctx.lineTo(x, height);

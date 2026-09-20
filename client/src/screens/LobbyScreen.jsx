@@ -18,10 +18,21 @@ import {
 } from '../storage/progress.js';
 import { useGame } from '../state/GameContext.jsx';
 import RoomBrowser from './RoomBrowser.jsx';
+import GamesInfo from '../components/GamesInfo.jsx';
+import AboutPage from '../components/AboutPage.jsx';
+import ContactPage from '../components/ContactPage.jsx';
+
+const NAV_TABS = [
+  { id: 'home', label: '🏠 בית' },
+  { id: 'info', label: '📊 נתונים' },
+  { id: 'about', label: 'ℹ️ אודות' },
+  { id: 'contact', label: '✉️ צור קשר' },
+];
 
 export default function LobbyScreen({ onStart }) {
   const { joinRoom, connected } = useGame();
 
+  const [view, setView] = useState('home'); // 'home' | 'info' | 'about' | 'contact'
   const [gameId, setGameId] = useState(GAMES[0].id);
   const [name, setName] = useState(loadLastName());
   const [roomCode, setRoomCode] = useState('');
@@ -84,6 +95,25 @@ export default function LobbyScreen({ onStart }) {
         <p>שלושה משחקים, חדר אחד, מדליה אחת.</p>
       </header>
 
+      <nav className="lobby__nav">
+        {NAV_TABS.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            className={view === tab.id ? 'lobby__nav-btn is-active' : 'lobby__nav-btn'}
+            onClick={() => setView(tab.id)}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </nav>
+
+      {view === 'info' && <GamesInfo />}
+      {view === 'about' && <AboutPage />}
+      {view === 'contact' && <ContactPage />}
+
+      {view === 'home' && (
+        <>
       {/* ---------------------------------------------- בחירת המשחק */}
       <section className="lobby__section">
         <h2 className="lobby__section-title">איזה משחק משחקות היום?</h2>
@@ -189,6 +219,8 @@ export default function LobbyScreen({ onStart }) {
             </div>
           </div>
         </div>
+      )}
+        </>
       )}
     </div>
   );

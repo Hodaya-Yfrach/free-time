@@ -8,18 +8,30 @@
 import { useState, useEffect, useRef } from 'react';
 import Shape from './Shape.jsx';
 import { buildQuestion } from './questions.js';
+import { shuffle } from './shapeData.js';
 
 export default function ShapesGame({ engine }) {
-  const { config, frozen, roundKey, registerSuccess, registerFailure } = engine;
+  const { config, frozen, roundKey, registerSuccess, registerFailure, refreshRound, powerHandlerRef } = engine;
 
   const [question, setQuestion] = useState(() => buildQuestion(config));
   const [msLeft, setMsLeft] = useState(config.questionMs);
+  const [hiddenKeys, setHiddenKeys] = useState([]);
+  const [hintOn, setHintOn] = useState(false);
+  const [revealOn, setRevealOn] = useState(false);
+  const [freezeLeft, setFreezeLeft] = useState(0);
   const deadlineRef = useRef(0);
+  const freezeRef = useRef(0);
+  const timersRef = useRef([]);
 
   // שאלה חדשה בכל פעם ש-roundKey משתנה (תשובה נכונה / טעות / עליית שלב)
   useEffect(() => {
     setQuestion(buildQuestion(config));
     setMsLeft(config.questionMs);
+    setHiddenKeys([]);
+    setHintOn(false);
+    setRevealOn(false);
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
     deadlineRef.current = performance.now() + config.questionMs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roundKey]);
@@ -35,11 +47,15 @@ export default function ShapesGame({ engine }) {
 
       if (frozen) {
         deadlineRef.current += delta; // הקפאה אמיתית של הטיימר
+      } else if (freezeRef.current > 0) {
+        freezeRef.current = Math.max(0, freezeRef.current - delta);
+        deadlineRef.current += delta;
+        setFreezeLeft(freezeRef.current);
       } else {
         const remaining = deadlineRef.current - now;
         setMsLeft(Math.max(0, remaining));
         if (remaining <= 0) {
-          registerFailure(); // נגמר הזמן = טעות
+          if (!registerFailure({ grace: false })) refreshRound(); // נגמר הזמן = טעות (מגן סופג ומחליף שאלה)
           return;
         }
       }
@@ -48,16 +64,79 @@ export default function ShapesGame({ engine }) {
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [frozen, roundKey, registerFailure]);
+  }, [frozen, roundKey, registerFailure, refreshRound]);
 
   function handlePick(key) {
     if (frozen) return;
     if (key === question.correctKey) {
       // יחס המהירות: 1 = ענית מיד, 0 = ברגע האחרון
       registerSuccess(msLeft / config.questionMs);
-    } else {
-      registerFailure();
+    } else if (!registerFailure({ grace: false })) {
+      setHiddenKeys((keys) => [...keys, key]);
     }
+  }
+
+  function scheduleOff(setter, seconds) {
+    const id = setTimeout(() => setter(false), seconds * 1000);
+    timersRef.current.push(id);
+  }
+
+  useEffect(() => {
+    powerHandlerRef.current = (item) => {
+      const seconds = item.params?.seconds || 0;
+      const keys = (question.mode === 'findMissing' ? question.full : question.options).map((o) => o.key);
+
+      if (item.effect === 'fifty_fifty') {
+        const wrong = keys.filter((k) => k !== question.correctKey && !hiddenKeys.includes(k));
+        if (wrong.length < 2) return false;
+        const removed = shuffle(wrong).slice(0, Math.floor(wrong.length / 2));
+        setHiddenKeys((current) => [...current, ...removed]);
+        return true;
+      }
+
+      if (item.effect === 'hint') {
+        if (hintOn) return false;
+        setHintOn(true);
+        scheduleOff(setHintOn, 1.8);
+        return true;
+      }
+
+      if (item.effect === 'time_plus') {
+        deadlineRef.current += seconds * 1000;
+        return true;
+      }
+
+      if (item.effect === 'freeze_time') {
+        freezeRef.current = seconds * 1000;
+        return true;
+      }
+
+      if (item.effect === 'reveal_shadow') {
+        if (question.mode !== 'matchShadow' || revealOn) return false;
+        setRevealOn(true);
+        scheduleOff(setRevealOn, seconds);
+        return true;
+      }
+
+      if (item.effect === 'reroll') {
+        refreshRound();
+        return true;
+      }
+
+      if (item.effect === 'auto_solve') {
+        registerSuccess(0.3);
+        return true;
+      }
+
+      return false;
+    };
+  });
+
+  function cellClass(base, key) {
+    let cls = base;
+    if (hiddenKeys.includes(key)) cls += ' shape-cell--hidden';
+    if (hintOn && key === question.correctKey) cls += ' shape-cell--hint';
+    return cls;
   }
 
   const seconds = (msLeft / 1000).toFixed(1);
@@ -66,7 +145,7 @@ export default function ShapesGame({ engine }) {
   return (
     <div className="shapes-game">
       <div className={`question-clock${urgent ? ' question-clock--urgent' : ''}`}>
-        ⏳ {seconds} שניות
+        ⏳ {seconds} שניות{freezeLeft > 0 && ' ❄️ מוקפא'}
       </div>
 
       <h2 className="question-title">{question.title}</h2>
@@ -78,7 +157,7 @@ export default function ShapesGame({ engine }) {
             {question.full.map((item) => (
               <button
                 key={item.key}
-                className="shape-cell"
+                className={cellClass('shape-cell', item.key)}
                 onClick={() => handlePick(item.key)}
                 aria-label={`בחירת ${item.type}`}
               >
@@ -110,11 +189,11 @@ export default function ShapesGame({ engine }) {
             {question.options.map((item) => (
               <button
                 key={item.key}
-                className="shape-cell shape-cell--option"
+                className={cellClass('shape-cell shape-cell--option', item.key)}
                 onClick={() => handlePick(item.key)}
                 aria-label={`בחירת ${item.type}`}
               >
-                <Shape item={item} size={70} shadow={!!item.shadow} />
+                <Shape item={item} size={70} shadow={!!item.shadow && !revealOn} />
               </button>
             ))}
           </div>

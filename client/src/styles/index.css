@@ -208,33 +208,55 @@ p { margin: 0; }
 .sidebar__actions { display: grid; gap: 8px; }
 .sidebar__legend { font-size: 12.5px; line-height: 1.7; color: var(--ink-faint); }
 
-/* לוח תוצאות */
-.leaderboard { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; flex: 1; }
+/* לוח תוצאות — כל שורה היא מלבן קטן ונפרד, עם דגש על ה"מקום" ולא על הניקוד */
+.leaderboard { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; flex: 1; }
 .leaderboard__empty { font-size: 14px; color: var(--ink-faint); flex: 1; }
 
 .leaderboard__row {
   display: grid;
-  grid-template-columns: 26px 1fr auto;
+  grid-template-columns: 34px 1fr auto;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
-  border-radius: var(--radius-sm);
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 16px;
   background: var(--surface);
+  border: 1px solid var(--line);
   box-shadow: var(--shadow-sm);
   font-size: 14px;
+  transition: transform 0.15s ease;
 }
+.leaderboard__row:hover { transform: translateX(-2px); }
 .leaderboard__row.is-leader {
   background: linear-gradient(135deg, #fef9c3, #fde68a);
+  border-color: #fde68a;
   color: #713f12;
 }
-.leaderboard__row.is-me { outline: 2px solid var(--brand); }
+.leaderboard__row.is-me { outline: 2px solid var(--brand); outline-offset: -1px; }
 
-.leaderboard__place { font-weight: 900; color: var(--ink-faint); }
-.leaderboard__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+/* תג המקום - עיגול בולט, זה מה שהעין אמורה לתפוס ראשון */
+.leaderboard__badge {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  font-size: 14px;
+  background: var(--brand-soft);
+  color: var(--brand);
+}
+.leaderboard__row.is-leader .leaderboard__badge { background: #fff; color: #b45309; }
+
+.leaderboard__name {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  font-weight: 600; display: flex; flex-direction: column; gap: 1px;
+}
+.leaderboard__level { color: var(--ink-faint); font-weight: 500; }
 .leaderboard__paused { color: var(--ink-faint); }
-.leaderboard__stats { display: flex; flex-direction: column; align-items: flex-start; }
-.leaderboard__stats strong { font-size: 16px; }
-.leaderboard__stats small { color: var(--ink-faint); font-size: 11px; }
+
+/* הניקוד - מוצג קטן ועדין בכוונה, לא בולט כמו המקום */
+.leaderboard__points { font-size: 12px; color: var(--ink-faint); font-weight: 600; }
 
 /* אזור המשחק */
 .playfield { flex: 1; padding: 24px 32px 32px; display: flex; flex-direction: column; gap: 20px; }
@@ -243,11 +265,28 @@ p { margin: 0; }
 /* סרגל עליון */
 .topbar {
   display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+  padding-bottom: 14px;
+}
+/* שורת טקסט פשוטה - בכוונה בלי מסגרת/רקע כפתור, כדי לא להוסיף עוד "כפתור" */
+.topbar__plain {
+  font-size: 14px;
+  color: var(--ink-soft);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.topbar__plain strong { color: var(--ink); font-weight: 800; }
+.topbar__dot { color: var(--ink-faint); }
+
+.topbar__cells {
+  display: flex;
   flex-wrap: wrap;
   gap: 12px;
   align-items: stretch;
-  position: relative;
-  padding-bottom: 14px;
 }
 .topbar__cell {
   display: flex;
@@ -575,3 +614,126 @@ p { margin: 0; }
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ============================================================
+   תוספות: אתגר מדליה, בחירת פרס, וסל הקניות
+   ============================================================ */
+
+.overlay--medal { z-index: 1300; background: rgba(15, 23, 42, 0.65); }
+.panel--medal { max-width: 480px; }
+
+.medal__sub { color: var(--ink-faint); font-size: 13px; }
+.medal__timer {
+  font-size: 30px; font-weight: 900; color: var(--brand);
+  background: var(--brand-soft); padding: 6px 20px; border-radius: 999px;
+}
+.medal__timer--urgent { color: #b91c1c; background: #fee2e2; animation: pulse 0.8s infinite; }
+@keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
+
+.medal__question { font-size: 18px; font-weight: 700; color: var(--ink); line-height: 1.5; }
+.medal__options { display: grid; gap: 8px; width: 100%; }
+.medal__option { width: 100%; text-align: center; }
+
+.panel--prize { max-width: 520px; }
+.prize-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; width: 100%; }
+.prize-option {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  padding: 16px 10px; border-radius: var(--radius-sm); border: 2px solid var(--line);
+  background: var(--surface); cursor: pointer; font: inherit; transition: all 0.15s ease;
+}
+.prize-option:hover:not(:disabled) { border-color: var(--brand); transform: translateY(-2px); }
+.prize-option:disabled { opacity: 0.45; cursor: not-allowed; }
+.prize-option__icon { font-size: 32px; }
+.prize-option__label { font-size: 13px; font-weight: 600; text-align: center; }
+.prize-option__meta { font-size: 11px; color: var(--ink-faint); }
+
+.prize-confirm {
+  width: 100%; background: #fff7ed; border: 1px solid #fed7aa; border-radius: var(--radius-sm);
+  padding: 16px; margin-top: 8px; text-align: right;
+}
+.prize-confirm p { color: #9a3412; font-size: 13.5px; line-height: 1.6; }
+
+/* סל הקניות בתפריט הצדדי */
+.prize-cart {
+  background: rgba(255,255,255,0.6); border-radius: var(--radius-sm);
+  padding: 12px 14px; border: 1px solid var(--line);
+}
+.prize-cart__title { font-size: 13px; margin-bottom: 8px; }
+.prize-cart__items { display: flex; flex-wrap: wrap; gap: 6px; }
+.prize-cart__item {
+  font-size: 20px; background: var(--surface); border-radius: 10px;
+  width: 34px; height: 34px; display: flex; align-items: center; justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ============================================================
+   ניווט הלובי + עמודי נתונים/אודות/צור קשר
+   ============================================================ */
+
+.lobby__nav { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+.lobby__nav-btn {
+  font: inherit; border: none; cursor: pointer; padding: 10px 18px;
+  border-radius: 999px; background: rgba(255,255,255,0.6); color: var(--ink-soft);
+  font-weight: 700; transition: all 0.15s ease;
+}
+.lobby__nav-btn.is-active { background: var(--brand); color: #fff; }
+.lobby__nav-btn:hover:not(.is-active) { background: rgba(255,255,255,0.9); }
+
+.games-info__grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+.games-info__card {
+  background: var(--surface); border-radius: var(--radius); padding: 20px;
+  box-shadow: var(--shadow-sm); border-top: 4px solid var(--accent, var(--brand));
+}
+.games-info__head { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+.games-info__icon { font-size: 32px; }
+.games-info__tagline { color: var(--ink-faint); font-size: 13px; }
+.games-info__desc { color: var(--ink-soft); font-size: 14px; line-height: 1.6; margin-bottom: 12px; }
+.games-info__stats { display: grid; gap: 6px; font-size: 13px; }
+.games-info__stats > div { display: flex; justify-content: space-between; border-top: 1px dashed var(--line); padding-top: 6px; }
+.games-info__stats dt { color: var(--ink-faint); }
+.games-info__stats dd { margin: 0; font-weight: 800; }
+.games-info__footnote { font-size: 13px; color: var(--ink-faint); line-height: 1.7; margin-top: 16px; }
+
+.about-page__body { display: grid; gap: 14px; max-width: 640px; }
+.about-page__body p { color: var(--ink-soft); line-height: 1.8; }
+
+.contact-page__hint { color: var(--ink-faint); margin-bottom: 12px; }
+.contact-page textarea {
+  font: inherit; padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--line);
+  resize: vertical;
+}
+
+/* ============================================================
+   כוחות-על: שורת הפרסים במשחק
+   ============================================================ */
+
+.powerbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 8px 0; }
+.powerbar__btn {
+  position: relative; display: flex; align-items: center; gap: 6px;
+  font: inherit; font-size: 13px; font-weight: 700; cursor: pointer;
+  padding: 6px 12px 6px 10px; border-radius: 999px; border: 2px solid var(--line);
+  background: var(--surface); color: var(--ink); transition: all 0.15s ease;
+}
+.powerbar__btn:hover:not(:disabled) { border-color: var(--brand); transform: translateY(-2px); }
+.powerbar__btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.powerbar__key {
+  font-size: 11px; font-weight: 900; color: #fff; background: var(--brand);
+  border-radius: 6px; min-width: 18px; height: 18px; display: inline-flex;
+  align-items: center; justify-content: center;
+}
+.powerbar__icon { font-size: 18px; }
+.powerbar__count { font-size: 12px; color: var(--ink-faint); }
+.powerbar__auto, .powerbar__boost {
+  font-size: 13px; font-weight: 700; padding: 6px 12px; border-radius: 999px;
+  background: var(--brand-soft); color: var(--brand);
+}
+.powerbar__boost { background: #fef3c7; color: #b45309; }
+
+.shape-cell--hidden { opacity: 0.12; filter: grayscale(1); pointer-events: none; }
+.shape-cell--hint { animation: hint-glow 0.6s ease-in-out infinite alternate; border-color: #facc15; }
+@keyframes hint-glow {
+  from { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.9); }
+  to { box-shadow: 0 0 0 10px rgba(250, 204, 21, 0); }
+}
+
+.prize-option__desc { font-size: 11.5px; color: var(--ink-soft); text-align: center; line-height: 1.4; }

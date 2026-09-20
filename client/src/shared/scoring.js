@@ -80,9 +80,44 @@ export function levelConfig(level) {
     objectsOnScreen: Math.min(3 + l, MAX_OBJECTS_ON_SCREEN),
     // זמן לשאלה: מתחיל ב-16 שניות, לא יורד מתחת ל-12 בשלב מתקדם
     questionMs: Math.max(12000, 16000 - (l - 1) * 700),
-    // מכפיל מהירות למשחקי הקנבס (מכונית / דולר) — עלייה יציבה בין שלבים
-    speedFactor: 1 + (l - 1) * 0.12,
-    // כמה מכשולים/שודדים פעילים במקביל
-    hazards: Math.min(1 + Math.ceil(l / 2), MAX_OBJECTS_ON_SCREEN),
+    // מכפיל מהירות למשחק הדולר (למכונית יש נוסחת מהירות ייעודית משלה -
+    // ר' carSpeedFactor למטה - כי היא צריכה להמשיך לעלות גם אחרי שלב 15
+    // ולא להתקבע בגלל תקרה משותפת עם משחק אחר).
+    speedFactor: Math.min(1 + (l - 1) * 0.08, 2.1),
+
+    // ---- הגדרות ייעודיות למשחק המכונית ----
+    // מדרגות מפורשות לפי בקשה: 2 נתיבים ומכשול אחד בהתחלה, 4 נתיבים
+    // משלב 3, מכשול שני משלב 10, 6 נתיבים משלב 29, מכשול שלישי משלב 30.
+    lanes: carLanesForLevel(l),
+    blockedLanes: carBlockedLanesForLevel(l),
+
+    // ---- הגדרות ייעודיות למשחק הדולר ----
+    // כמות השודדים: מתחילה נמוך משמעותית (שודד אחד בשלב 1, לא יותר מדי
+    // מייד בהתחלה כמו קודם) ועולה בהדרגה עם השלב, עד תקרה גבוהה יותר (10).
+    hazards: Math.min(1 + Math.floor((l - 1) / 2), 10),
   };
+}
+
+/** כמות הנתיבים במשחק המכונית, לפי מדרגות מפורשות (לא נוסחה הדרגתית) */
+export function carLanesForLevel(level) {
+  if (level >= 29) return 6;
+  if (level >= 3) return 4;
+  return 2;
+}
+
+/** כמות המכוניות/המכשולים החוסמים בו-זמנית בשורה אחת, לפי מדרגות מפורשות */
+export function carBlockedLanesForLevel(level) {
+  if (level >= 30) return 3;
+  if (level >= 10) return 2;
+  return 1;
+}
+
+/**
+ * מכפיל המהירות הייעודי למשחק המכונית. בכוונה נפרד מ-speedFactor הכללי
+ * (המשותף עם משחק הדולר): כאן צריך עלייה רציפה שממשיכה גם אחרי שלב
+ * 15-20 ועד שלב 30 ומעבר, בלי "להתקבע" מוקדם מדי כמו שקרה קודם.
+ */
+export function carSpeedFactor(level) {
+  const l = Math.max(1, level);
+  return Math.min(1 + (l - 1) * 0.045, 3);
 }
