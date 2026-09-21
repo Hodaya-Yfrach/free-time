@@ -1,37 +1,9 @@
 // ============================================================================
 //  useGameEngine.js — המנוע המשותף לשלושת המשחקים
-<<<<<<< HEAD
-//  ----------------------------------------------------------------------
-//  כל משחק אחראי רק על מה שקורה על המסך שלו (צורות / מכונית / דולר).
-//  כל מה שמשותף נמצא כאן:
-//    • ניקוד לפי שלב + בונוס מהירות
-//    • ספירת זמן משחק פעיל (לא נספר בזמן השהיה או מסך כישלון)
-//    • עלייה בשלב אחרי LEVEL_STEP תשובות נכונות
-//    • טיפול בכישלון: מסך אדום, ספירה לאחור, התחלת השלב מחדש
-//    • שמירה בדפדפן ודיווח לשרת
-//
-//  המשחק מקבל מהמנוע שתי פעולות בלבד:
-//    registerSuccess(bonusRatio)  — הצלחה (תשובה נכונה / מכשול שנעקף / מטבע)
-//    registerFailure()            — טעות / התנגשות
-=======
->>>>>>> upgrade-v3
 // ============================================================================
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useGame, LEVEL_UP_DURATION } from '../state/GameContext.jsx';
-<<<<<<< HEAD
-import { answerPoints, levelConfig, LEVEL_STEP } from '../shared/scoring.js';
-import { saveProgress } from '../storage/progress.js';
-
-/** כמה שניות נמשכת הספירה לאחור אחרי טעות */
-const FAIL_COUNTDOWN_SECONDS = 5;
-
-/** כל כמה זמן מדווחים ניקוד לשרת (כדי לא להציף אותו) */
-const SYNC_INTERVAL_MS = 1000;
-
-export function useGameEngine({ gameId, initialProgress }) {
-  const { session, sendScore, sendPause, reportLevelUp, levelUp } = useGame();
-=======
 import { answerPoints, levelConfig, questionPoints, LEVEL_STEP } from '../shared/scoring.js';
 import { saveProgress } from '../storage/progress.js';
 import { pickUnusedRiddle } from '../shared/riddles.js';
@@ -56,7 +28,6 @@ export function useGameEngine({ gameId, initialProgress, levelUpMode = 'count', 
   const { session, sendScore, sendPause, reportLevelUp, levelUp, leaderMedal, pushToast } = useGame();
 
   const effectiveThreshold = levelUpThreshold ?? LEVEL_STEP;
->>>>>>> upgrade-v3
 
   const [points, setPoints] = useState(initialProgress?.points || 0);
   const [level, setLevel] = useState(initialProgress?.level || 1);
@@ -65,30 +36,6 @@ export function useGameEngine({ gameId, initialProgress, levelUpMode = 'count', 
   const [paused, setPaused] = useState(false);
   const [failed, setFailed] = useState(false);
   const [countdown, setCountdown] = useState(FAIL_COUNTDOWN_SECONDS);
-<<<<<<< HEAD
-
-  /**
-   * roundKey עולה ב-1 בכל פעם שצריך להתחיל סיבוב מחדש
-   * (אחרי טעות או אחרי עליית שלב). המשחקים מאזינים לו
-   * ב-useEffect ובונים מצב חדש.
-   */
-  const [roundKey, setRoundKey] = useState(0);
-
-  // refs — כדי שלולאות אנימציה יוכלו לקרוא ערכים עדכניים בלי להירנדר מחדש
-  const levelRef = useRef(level);
-  const frozenRef = useRef(false);
-  const pausedRef = useRef(false);
-  const correctRef = useRef(0);   // מונה ההצלחות בשלב הנוכחי
-
-  const levelUpVisible = !!levelUp;
-  // "קפוא" = לא סופרים זמן, לא מקבלים קלט, האנימציות עוצרות
-  const frozen = paused || failed || levelUpVisible;
-
-  useEffect(() => { levelRef.current = level; }, [level]);
-  useEffect(() => { frozenRef.current = frozen; }, [frozen]);
-
-  // ------------------------------------------------------ שעון זמן פעיל
-=======
   const [roundKey, setRoundKey] = useState(0);
 
   const [medalChallenge, setMedalChallenge] = useState(null);
@@ -132,16 +79,12 @@ export function useGameEngine({ gameId, initialProgress, levelUpMode = 'count', 
   useEffect(() => { prizeSelectionRef.current = prizeSelection; }, [prizeSelection]);
   useEffect(() => { levelStartedAtRef.current = levelStartedAt; }, [levelStartedAt]);
 
->>>>>>> upgrade-v3
   useEffect(() => {
     let last = performance.now();
     const id = setInterval(() => {
       const now = performance.now();
       const delta = now - last;
       last = now;
-<<<<<<< HEAD
-      if (!frozenRef.current) setActiveMs((ms) => ms + delta);
-=======
       if (!frozenRef.current) {
         setActiveMs((ms) => ms + delta);
         const boost = scoreBoostRef.current;
@@ -155,14 +98,10 @@ export function useGameEngine({ gameId, initialProgress, levelUpMode = 'count', 
           }
         }
       }
->>>>>>> upgrade-v3
     }, 200);
     return () => clearInterval(id);
   }, []);
 
-<<<<<<< HEAD
-  // ------------------------------------------- שמירה בדפדפן + סנכרון לשרת
-=======
   useEffect(() => {
     if (levelUpMode !== 'time') return;
     const elapsed = activeMs - levelStartedAtRef.current;
@@ -178,7 +117,6 @@ export function useGameEngine({ gameId, initialProgress, levelUpMode = 'count', 
     }
   }, [activeMs, effectiveThreshold, levelUpMode, reportLevelUp]);
 
->>>>>>> upgrade-v3
   useEffect(() => {
     if (!session) return;
     const id = setInterval(() => {
@@ -195,28 +133,6 @@ export function useGameEngine({ gameId, initialProgress, levelUpMode = 'count', 
     return () => clearInterval(id);
   }, [session, gameId, points, level, activeMs, sendScore]);
 
-<<<<<<< HEAD
-  // ------------------------------------------------------------- הצלחה
-  /**
-   * @param {number} bonusRatio ערך בין 0 ל-1 — כמה מהר הגיעה ההצלחה.
-   *                            1 = מיידי, 0 = בשנייה האחרונה.
-   *
-   * הערה על המימוש: הספירה מנוהלת ב-ref ולא רק ב-state, כי אסור
-   * לבצע תופעות לוואי (דיווח לשרת, טיימרים) בתוך פונקציית עדכון state —
-   * React מריץ אותה פעמיים במצב פיתוח, וזה היה גורם לדיווח כפול.
-   */
-  const registerSuccess = useCallback((bonusRatio = 0) => {
-    if (frozenRef.current) return 0;
-
-    const currentLevel = levelRef.current;
-    const gained = answerPoints(currentLevel, bonusRatio);
-    setPoints((p) => p + gained);
-
-    const next = correctRef.current + 1;
-
-    if (next >= LEVEL_STEP) {
-      // עליית שלב
-=======
   const triggerMedalChallenge = useCallback(() => {
     if (medalChallengeRef.current || prizeSelectionRef.current) return;
     const riddle = pickUnusedRiddle(usedRiddleIdsRef.current);
@@ -260,7 +176,6 @@ export function useGameEngine({ gameId, initialProgress, levelUpMode = 'count', 
 
     if (levelUpMode !== 'external' && newProgress >= effectiveThreshold) {
       didLevelUp = true;
->>>>>>> upgrade-v3
       correctRef.current = 0;
       setCorrectInLevel(0);
 
@@ -269,27 +184,6 @@ export function useGameEngine({ gameId, initialProgress, levelUpMode = 'count', 
       setLevel(newLevel);
       reportLevelUp(newLevel);
 
-<<<<<<< HEAD
-      // הסיבוב הבא מתחיל רק אחרי שמסך הקונפטי נעלם
-      setTimeout(() => setRoundKey((k) => k + 1), LEVEL_UP_DURATION + 50);
-    } else {
-      correctRef.current = next;
-      setCorrectInLevel(next);
-      setRoundKey((k) => k + 1);
-    }
-
-    return gained;
-  }, [reportLevelUp]);
-
-  // ------------------------------------------------------------- כישלון
-  const registerFailure = useCallback(() => {
-    if (frozenRef.current) return;
-    setFailed(true);
-    setCountdown(FAIL_COUNTDOWN_SECONDS);
-  }, []);
-
-  // ספירה לאחור במסך הכישלון
-=======
       streakRef.current = cleanLevelRef.current ? streakRef.current + 1 : 0;
       cleanLevelRef.current = true; 
 
@@ -337,34 +231,22 @@ export function useGameEngine({ gameId, initialProgress, levelUpMode = 'count', 
     return true;
   }, [gameId, pushToast]);
 
->>>>>>> upgrade-v3
   useEffect(() => {
     if (!failed) return;
     const id = setInterval(() => setCountdown((c) => c - 1), 1000);
     return () => clearInterval(id);
   }, [failed]);
 
-<<<<<<< HEAD
-  // כשהספירה מגיעה לאפס — השלב מתחיל מחדש. הנקודות נשמרות.
-=======
->>>>>>> upgrade-v3
   useEffect(() => {
     if (!failed || countdown > 0) return;
     setFailed(false);
     setCountdown(FAIL_COUNTDOWN_SECONDS);
     correctRef.current = 0;
     setCorrectInLevel(0);
-<<<<<<< HEAD
-    setRoundKey((k) => k + 1);
-  }, [failed, countdown]);
-
-  // ------------------------------------------------------------- השהיה
-=======
     setExternalProgress(0);
     setRoundKey((k) => k + 1);
   }, [failed, countdown]);
 
->>>>>>> upgrade-v3
   const togglePause = useCallback(() => {
     const next = !pausedRef.current;
     pausedRef.current = next;
@@ -372,10 +254,6 @@ export function useGameEngine({ gameId, initialProgress, levelUpMode = 'count', 
     sendPause(next);
   }, [sendPause]);
 
-<<<<<<< HEAD
-  return {
-    // מצב
-=======
   const forceLevelUp = useCallback(() => {
     const newLevel = levelRef.current + 1;
     correctRef.current = 0;
@@ -499,20 +377,15 @@ export function useGameEngine({ gameId, initialProgress, levelUpMode = 'count', 
   }, [applyUniversalEffect, pushToast]);
 
   return {
->>>>>>> upgrade-v3
     points,
     level,
     activeMs,
     correctInLevel,
-<<<<<<< HEAD
-    progressInLevel: correctInLevel / LEVEL_STEP,
-=======
     progressInLevel: levelUpMode === 'external'
       ? externalProgress
       : levelUpMode === 'time'
         ? Math.min(1, (activeMs - levelStartedAtRef.current) / effectiveThreshold)
         : correctInLevel / effectiveThreshold,
->>>>>>> upgrade-v3
     config: levelConfig(level),
     paused,
     failed,
@@ -520,9 +393,6 @@ export function useGameEngine({ gameId, initialProgress, levelUpMode = 'count', 
     frozen,
     frozenRef,
     roundKey,
-<<<<<<< HEAD
-    // פעולות
-=======
     medalChallenge,
     prizeSelection,
     ownedPrizes,
@@ -543,13 +413,8 @@ export function useGameEngine({ gameId, initialProgress, levelUpMode = 'count', 
     shieldGraceUntilRef,
     medalRunCount,
     collectMedal,
->>>>>>> upgrade-v3
     registerSuccess,
     registerFailure,
     togglePause,
   };
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> upgrade-v3

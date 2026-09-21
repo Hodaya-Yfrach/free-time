@@ -1,11 +1,5 @@
 // ============================================================================
 //  RoomBrowser.jsx — איתור חדרים פעילים
-<<<<<<< HEAD
-//  ----------------------------------------------------------------------
-//  מציג לכל חדר: הקוד, כמה שחקניות בפנים, אילו משחקים משוחקים בו
-//  ומי מוביל ובכמה נקודות. לחיצה על חדר ממלאת את הקוד בטופס.
-=======
->>>>>>> upgrade-v3
 // ============================================================================
 
 import { useState } from 'react';
@@ -26,19 +20,11 @@ export default function RoomBrowser({ onPick }) {
   return (
     <div className="browser">
       <button className="btn btn--ghost" onClick={refresh} disabled={loading}>
-<<<<<<< HEAD
-        {loading ? 'מחפש חדרים…' : '🔎 איתור חדרים פעילים'}
-      </button>
-
-      {rooms !== null && rooms.length === 0 && (
-        <p className="browser__empty">אין כרגע חדרים פעילים. פתחי חדר חדש עם קוד משלך.</p>
-=======
         {loading ? 'מאתר חדרים...' : '🔎 חיפוש חדרים פעילים'}
       </button>
 
       {rooms !== null && rooms.length === 0 && (
         <p className="browser__empty">לא נמצאו חדרים פעילים כרגע. הרגישי חופשי לפתוח חדר חדש!</p>
->>>>>>> upgrade-v3
       )}
 
       {rooms !== null && rooms.length > 0 && (
@@ -54,17 +40,10 @@ export default function RoomBrowser({ onPick }) {
                   ))}
                 </span>
 
-<<<<<<< HEAD
-                <span className="browser__players">{room.players} שחקניות</span>
-
-                <span className="browser__top">
-                  {room.topName ? `👑 ${room.topName} · ${room.topPoints} נק'` : 'אין ניקוד עדיין'}
-=======
                 <span className="browser__players">{room.players} משתתפות</span>
 
                 <span className="browser__top">
                   {room.topName ? `👑 ${room.topName} · ${room.topPoints} נק'` : 'עדיין אין ניקוד'}
->>>>>>> upgrade-v3
                 </span>
               </button>
             </li>
@@ -73,8 +52,4 @@ export default function RoomBrowser({ onPick }) {
       )}
     </div>
   );
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> upgrade-v3

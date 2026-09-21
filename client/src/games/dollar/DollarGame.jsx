@@ -1,16 +1,5 @@
 // ============================================================================
 //  DollarGame.jsx — בריחת הדולר
-<<<<<<< HEAD
-//  ----------------------------------------------------------------------
-//  זה בדיוק ההפך ממרוץ המכשולים:
-//    • שם — השחקנית זזה והמכשולים עומדים במקום.
-//    • כאן — השודדים רודפים באופן פעיל, והשחקנית בורחת עם העכבר.
-//
-//  הסמן הופך לשטר דולר. מטבעות מופיעים לזמן מוגבל; איסוף מטבע
-//  נחשב "תשובה נכונה" במנוע הניקוד, ובונוס המהירות נקבע לפי
-//  כמה זמן נשאר למטבע לחיות. מגע של שודד = כישלון.
-=======
->>>>>>> upgrade-v3
 // ============================================================================
 
 import { useEffect, useRef } from 'react';
@@ -20,22 +9,6 @@ import { MAX_OBJECTS_ON_SCREEN } from '../../shared/scoring.js';
 const PLAYER_RADIUS = 20;
 const ROBBER_RADIUS = 20;
 const COIN_RADIUS = 16;
-<<<<<<< HEAD
-const BASE_ROBBER_SPEED = 85;   // פיקסלים לשנייה בשלב 1
-const COIN_LIFETIME = 6;        // שניות עד שמטבע נעלם
-const PLAYER_EASE = 14;         // כמה "כבד" השטר ביחס לעכבר
-
-export default function DollarGame({ engine }) {
-  const { config, frozen, roundKey, registerSuccess, registerFailure } = engine;
-
-  const world = useRef({
-    player: { x: 0.5, y: 0.5 },   // מיקום יחסי
-    pointer: { x: 0.5, y: 0.5 },
-    robbers: [],
-    coin: null,
-    spawnTimer: 0,
-    graceTimer: 1.5,              // שנייה וחצי חסינות בתחילת כל סיבוב
-=======
 const BASE_ROBBER_SPEED = 85; 
 const PLAYER_EASE = 14; 
 
@@ -68,7 +41,6 @@ export default function DollarGame({ engine }) {
     decoy: null,
     spawnTimer: 0,
     graceTimer: 1.5,
->>>>>>> upgrade-v3
   });
 
   const frozenRef = useRef(frozen);
@@ -76,13 +48,6 @@ export default function DollarGame({ engine }) {
   useEffect(() => { frozenRef.current = frozen; }, [frozen]);
   useEffect(() => { configRef.current = config; }, [config]);
 
-<<<<<<< HEAD
-  // סיבוב חדש: מנקים את הזירה ומחזירים את השטר למרכז
-  useEffect(() => {
-    const w = world.current;
-    w.robbers = [];
-    w.coin = null;
-=======
   function coinsForLevel(lvl) {
     return Math.min(MAX_COINS_PER_WAVE, MIN_COINS_PER_WAVE + Math.floor((lvl - 1) / 3));
   }
@@ -96,14 +61,10 @@ export default function DollarGame({ engine }) {
 
   function resetArena(w, lvl) {
     w.robbers = [];
->>>>>>> upgrade-v3
     w.spawnTimer = 0;
     w.graceTimer = 1.5;
     w.player = { x: 0.5, y: 0.5 };
     w.pointer = { x: 0.5, y: 0.5 };
-<<<<<<< HEAD
-  }, [roundKey]);
-=======
     w.wavesDone = 0;
     w.decoy = null;
     w.fx.decoy = 0;
@@ -166,7 +127,6 @@ export default function DollarGame({ engine }) {
       return false;
     };
   });
->>>>>>> upgrade-v3
 
   const { canvasRef } = useCanvasStage((ctx, size, dt) => {
     const { width, height } = size;
@@ -177,12 +137,6 @@ export default function DollarGame({ engine }) {
 
     if (!frozenRef.current) {
       if (w.graceTimer > 0) w.graceTimer -= dt;
-<<<<<<< HEAD
-
-      // ---- השטר נמשך אל העכבר. ההחלקה נותנת לשודדים סיכוי.
-      w.player.x += (w.pointer.x - w.player.x) * Math.min(1, PLAYER_EASE * dt);
-      w.player.y += (w.pointer.y - w.player.y) * Math.min(1, PLAYER_EASE * dt);
-=======
       for (const key of Object.keys(w.fx)) {
         if (w.fx[key] > 0) w.fx[key] = Math.max(0, w.fx[key] - dt);
       }
@@ -190,15 +144,10 @@ export default function DollarGame({ engine }) {
       const ease = PLAYER_EASE * (w.fx.dash > 0 ? 2 : 1);
       w.player.x += (w.pointer.x - w.player.x) * Math.min(1, ease * dt);
       w.player.y += (w.pointer.y - w.player.y) * Math.min(1, ease * dt);
->>>>>>> upgrade-v3
 
       const px = w.player.x * width;
       const py = w.player.y * height;
 
-<<<<<<< HEAD
-      // ---- הוספת שודדים עד המכסה של השלב
-=======
->>>>>>> upgrade-v3
       const wanted = Math.min(cfg.hazards, MAX_OBJECTS_ON_SCREEN);
       w.spawnTimer -= dt;
       if (w.robbers.length < wanted && w.spawnTimer <= 0) {
@@ -206,13 +155,6 @@ export default function DollarGame({ engine }) {
         w.spawnTimer = 1.2;
       }
 
-<<<<<<< HEAD
-      // ---- השודדים רודפים
-      const robberSpeed = BASE_ROBBER_SPEED * cfg.speedFactor;
-      for (const robber of w.robbers) {
-        const dx = px - robber.x * width;
-        const dy = py - robber.y * height;
-=======
       const speedMultiplier = w.fx.freeze > 0 ? 0 : w.fx.slow > 0 ? 0.5 : 1;
       const robberSpeed = BASE_ROBBER_SPEED * cfg.speedFactor * speedMultiplier;
       const playerRadius = PLAYER_RADIUS * (w.fx.shrink > 0 ? 0.5 : 1);
@@ -222,72 +164,11 @@ export default function DollarGame({ engine }) {
       for (const robber of w.robbers) {
         const dx = chase.x - robber.x * width;
         const dy = chase.y - robber.y * height;
->>>>>>> upgrade-v3
         const distance = Math.hypot(dx, dy) || 1;
 
         robber.x += (dx / distance) * robberSpeed * dt / width;
         robber.y += (dy / distance) * robberSpeed * dt / height;
 
-<<<<<<< HEAD
-        if (w.graceTimer <= 0 && distance < PLAYER_RADIUS + ROBBER_RADIUS) {
-          registerFailure();
-          return;
-        }
-      }
-
-      // ---- מטבעות
-      if (!w.coin) {
-        w.coin = spawnCoin();
-      } else {
-        w.coin.life -= dt;
-        if (w.coin.life <= 0) {
-          w.coin = spawnCoin(); // מטבע שפג — פשוט מופיע במקום אחר
-        } else {
-          const dx = px - w.coin.x * width;
-          const dy = py - w.coin.y * height;
-          if (Math.hypot(dx, dy) < PLAYER_RADIUS + COIN_RADIUS) {
-            // בונוס מהירות לפי כמה מהר הגעתי למטבע
-            registerSuccess(w.coin.life / COIN_LIFETIME);
-            w.coin = null;
-          }
-        }
-      }
-    }
-
-    // ------------------------------------------------------------- ציור
-    drawFloor(ctx, width, height);
-
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-
-    if (w.coin) {
-      const cx = w.coin.x * width;
-      const cy = w.coin.y * height;
-      // טבעת שמתכווצת ומראה כמה זמן נשאר למטבע
-      ctx.strokeStyle = 'rgba(234,179,8,0.8)';
-      ctx.lineWidth = 3;
-      ctx.beginPath();
-      ctx.arc(cx, cy, COIN_RADIUS + 8, -Math.PI / 2,
-        -Math.PI / 2 + (w.coin.life / COIN_LIFETIME) * Math.PI * 2);
-      ctx.stroke();
-
-      ctx.font = '30px serif';
-      ctx.fillText('🪙', cx, cy);
-    }
-
-    ctx.font = '34px serif';
-    for (const robber of w.robbers) {
-      ctx.fillText('🥷', robber.x * width, robber.y * height);
-    }
-
-    ctx.font = '38px serif';
-    ctx.globalAlpha = w.graceTimer > 0 ? 0.55 : 1;
-    ctx.fillText('💵', w.player.x * width, w.player.y * height);
-    ctx.globalAlpha = 1;
-  }, []);
-
-  /** תנועת העכבר היא ההגה של המשחק הזה */
-=======
         const touchDistance = Math.hypot(px - robber.x * width, py - robber.y * height);
         if (w.graceTimer <= 0 && w.fx.ghost <= 0 && touchDistance < playerRadius + ROBBER_RADIUS) {
           if (registerFailure()) return;
@@ -369,7 +250,6 @@ export default function DollarGame({ engine }) {
     drawEffects(ctx, w.fx);
   }, []);
 
->>>>>>> upgrade-v3
   function handleMove(event) {
     const rect = event.currentTarget.getBoundingClientRect();
     world.current.pointer = {
@@ -380,13 +260,9 @@ export default function DollarGame({ engine }) {
 
   return (
     <div className="stage-wrap">
-<<<<<<< HEAD
-      <p className="stage-hint">הזיזי את העכבר כדי להבריח את השטר. אספי מטבעות, אל תיתני לשודדים לגעת.</p>
-=======
       <p className="stage-hint">
         הזיזי את העכבר כדי להתחמק מהשודדים. אספי את כל המטבעות בגל (מתחדש כל 5 שניות) כדי לנסות לזכות במדליה. הישרדות של 5 גלים תעביר אותך לשלב הבא!
       </p>
->>>>>>> upgrade-v3
       <canvas
         ref={canvasRef}
         className="stage-canvas stage-canvas--floor"
@@ -396,19 +272,11 @@ export default function DollarGame({ engine }) {
   );
 }
 
-<<<<<<< HEAD
-/** שודד חדש נכנס מאחת הפינות, רחוק מהשחקנית */
-=======
->>>>>>> upgrade-v3
 function spawnRobber(player) {
   const corners = [
     { x: 0.05, y: 0.05 }, { x: 0.95, y: 0.05 },
     { x: 0.05, y: 0.95 }, { x: 0.95, y: 0.95 },
   ];
-<<<<<<< HEAD
-  // בוחרים את הפינה הרחוקה ביותר מהשחקנית כדי לא "להקפיץ" שודד עליה
-=======
->>>>>>> upgrade-v3
   let best = corners[0];
   let bestDistance = -1;
   for (const corner of corners) {
@@ -421,8 +289,6 @@ function spawnRobber(player) {
   return { x: best.x, y: best.y };
 }
 
-<<<<<<< HEAD
-=======
 function cornersByDistance(player) {
   const corners = [
     { x: 0.05, y: 0.05 }, { x: 0.95, y: 0.05 },
@@ -449,23 +315,14 @@ function drawEffects(ctx, fx) {
   ctx.restore();
 }
 
->>>>>>> upgrade-v3
 function spawnCoin() {
   return {
     x: 0.12 + Math.random() * 0.76,
     y: 0.12 + Math.random() * 0.76,
-<<<<<<< HEAD
-    life: COIN_LIFETIME,
-  };
-}
-
-/** רקע הזירה — רשת עדינה שנותנת תחושת מרחב */
-=======
     caught: false,
   };
 }
 
->>>>>>> upgrade-v3
 function drawFloor(ctx, width, height) {
   ctx.clearRect(0, 0, width, height);
   ctx.fillStyle = '#0f172a';
@@ -486,8 +343,4 @@ function drawFloor(ctx, width, height) {
     ctx.lineTo(width, y);
     ctx.stroke();
   }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> upgrade-v3
