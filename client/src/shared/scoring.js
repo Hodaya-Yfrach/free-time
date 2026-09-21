@@ -52,22 +52,22 @@ export function levelConfig(level) {
     lanes: carLanesForLevel(l),
     blockedLanes: carBlockedLanesForLevel(l),
 
-    hazards: Math.min(1 + Math.floor((l - 1) / 2), 10),
+    hazards: Math.min(2 + Math.floor((l - 1) / 2), MAX_OBJECTS_ON_SCREEN),
   };
 }
 
 export function carLanesForLevel(level) {
   if (level >= 100) return 8;
-  if (level >= 40) return 6;
-  if (level >= 25) return 4;
+  if (level >= 30) return 6;
+  if (level >= 20) return 4;
   if (level >= 3) return 4;
   return 2;
 }
 
 export function carBlockedLanesForLevel(level) {
   if (level >= 100) return 4;
-  if (level >= 40) return 3;
-  if (level >= 25) return 2;
+  if (level >= 30) return 3;
+  if (level >= 20) return 2;
   if (level >= 10) return 2;
   return 1;
 }
