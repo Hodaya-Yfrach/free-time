@@ -57,13 +57,16 @@ export function levelConfig(level) {
 }
 
 export function carLanesForLevel(level) {
-  if (level >= 29) return 6;
+  if (level >= 100) return 8;
+  if (level >= 40) return 6;
   if (level >= 3) return 4;
   return 2;
 }
 
 export function carBlockedLanesForLevel(level) {
-  if (level >= 30) return 3;
+  if (level >= 100) return 4;
+  if (level >= 40) return 3;
+  if (level >= 25) return 3;
   if (level >= 10) return 2;
   return 1;
 }
