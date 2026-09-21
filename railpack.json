@@ -1,0 +1,25 @@
+
+{
+  "$schema": "https://schema.railpack.com",
+  "provider": "node",
+  "buildAptPackages": [],
+  "steps": {
+    "install-client": {
+      "commands": ["npm install --prefix client"]
+    },
+    "install-server": {
+      "commands": ["npm install --prefix server"]
+    },
+    "build": {
+      "inputs": [{ "step": "install-client" }],
+      "commands": ["npm run build --prefix client"]
+    }
+  },
+  "deploy": {
+    "startCommand": "node server/src/index.js",
+    "inputs": [
+      { "step": "install-server" },
+      { "step": "build" }
+    ]
+  }
+}
