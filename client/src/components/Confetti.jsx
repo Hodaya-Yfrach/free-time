@@ -1,9 +1,12 @@
 // ============================================================================
 //  Confetti.jsx — פיצוץ קונפטי על כל המסך
+<<<<<<< HEAD
 //  ----------------------------------------------------------------------
 //  מומש בקנבס ובלי שום ספרייה חיצונית: 220 חלקיקים שמקבלים
 //  מהירות אקראית מהמרכז, כוח כבידה והתנגדות אוויר.
 //  זה גם מהיר יותר מ-220 אלמנטים ב-DOM וגם שומר על הפרויקט רזה.
+=======
+>>>>>>> upgrade-v3
 // ============================================================================
 
 import { useEffect, useRef } from 'react';
@@ -16,7 +19,15 @@ export default function Confetti() {
 
   useEffect(() => {
     const canvas = canvasRef.current;
+<<<<<<< HEAD
     const ctx = canvas.getContext('2d');
+=======
+    if (!canvas) return; // פותר את שגיאת הקריסה (Cannot read properties of null)
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+>>>>>>> upgrade-v3
     const ratio = window.devicePixelRatio || 1;
 
     function resize() {
@@ -30,7 +41,10 @@ export default function Confetti() {
     const centerX = window.innerWidth / 2;
     const centerY = window.innerHeight / 2;
 
+<<<<<<< HEAD
     // יצירת החלקיקים — פיצוץ רדיאלי מהמרכז
+=======
+>>>>>>> upgrade-v3
     const particles = Array.from({ length: PARTICLE_COUNT }, () => {
       const angle = Math.random() * Math.PI * 2;
       const speed = 250 + Math.random() * 650;
@@ -56,8 +70,13 @@ export default function Confetti() {
       ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
 
       for (const p of particles) {
+<<<<<<< HEAD
         p.vy += 900 * dt;        // כבידה
         p.vx *= 0.985;           // התנגדות אוויר
+=======
+        p.vy += 900 * dt;        
+        p.vx *= 0.985;           
+>>>>>>> upgrade-v3
         p.x += p.vx * dt;
         p.y += p.vy * dt;
         p.rotation += p.spin * dt;
@@ -81,4 +100,8 @@ export default function Confetti() {
   }, []);
 
   return <canvas ref={canvasRef} className="confetti-canvas" aria-hidden="true" />;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> upgrade-v3

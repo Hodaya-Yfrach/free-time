@@ -1,4 +1,5 @@
 // ============================================================================
+<<<<<<< HEAD
 //  GameContext.jsx — המקור היחיד לאמת על מצב החדר
 //  ----------------------------------------------------------------------
 //  אחראי על:
@@ -9,6 +10,9 @@
 //    • מסך עליית השלב עם הקונפטי
 //
 //  הרכיבים לא מדברים עם ה-socket ישירות — הם קוראים ל-useGame().
+=======
+//  GameContext.jsx — ניהול הסטייט, החיבור וההודעות המרחפות
+>>>>>>> upgrade-v3
 // ============================================================================
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
@@ -16,12 +20,16 @@ import { socket, request } from '../net/socket.js';
 
 const GameContext = createContext(null);
 
+<<<<<<< HEAD
 /** משך התצוגה של מסך עליית השלב, במילישניות (2 שניות לפי הדרישה) */
+=======
+>>>>>>> upgrade-v3
 export const LEVEL_UP_DURATION = 2000;
 
 let toastId = 0;
 
 export function GameProvider({ children }) {
+<<<<<<< HEAD
   /** session = { roomCode, name, gameId } — null כל עוד לא הצטרפנו */
   const [session, setSession] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
@@ -30,6 +38,17 @@ export function GameProvider({ children }) {
   const [connected, setConnected] = useState(socket.connected);
 
   const levelUpTimer = useRef(null);
+=======
+  const [session, setSession] = useState(null);
+  const [leaderboard, setLeaderboard] = useState([]);
+  const [toasts, setToasts] = useState([]);
+  const [levelUp, setLevelUp] = useState(null); 
+  const [leaderMedal, setLeaderMedal] = useState(null); 
+  const [connected, setConnected] = useState(socket.connected);
+
+  const levelUpTimer = useRef(null);
+  const leaderMedalTimer = useRef(null);
+>>>>>>> upgrade-v3
 
   // ------------------------------------------------------------- הודעות צצות
   const pushToast = useCallback((text, kind = 'info') => {
@@ -45,11 +64,27 @@ export function GameProvider({ children }) {
     const onConnect = () => setConnected(true);
     const onDisconnect = () => setConnected(false);
     const onLeaderboard = (list) => setLeaderboard(list || []);
+<<<<<<< HEAD
     const onJoined = ({ name }) => pushToast(`${name} הצטרפה למשחק`, 'info');
     const onLeft = ({ name }) => pushToast(`${name} יצאה מהמשחק`, 'info');
     const onPaused = ({ name, paused }) =>
       pushToast(`${name} ${paused ? 'בהשהיה' : 'חזרה למשחק'}`, 'info');
     const onLeader = ({ name }) => pushToast(`👑 ${name} מובילה עכשיו`, 'leader');
+=======
+    
+    // שדרוג הטקסטים של ההודעות הקופצות לאווירת פרימיום/תחרות
+    const onJoined = ({ name }) => pushToast(`${name} נכנסה לזירה!`, 'info');
+    const onLeft = ({ name }) => pushToast(`${name} עזבה את הזירה`, 'info');
+    const onPaused = ({ name, paused }) =>
+      pushToast(`${name} ${paused ? 'עצרה להתרענן' : 'חזרה לעניינים!'}`, 'info');
+    
+    const onLeader = ({ name }) => {
+      pushToast(`👑 ${name} לקחה את ההובלה!`, 'leader');
+      setLeaderMedal({ name });
+      clearTimeout(leaderMedalTimer.current);
+      leaderMedalTimer.current = setTimeout(() => setLeaderMedal(null), 5000);
+    };
+>>>>>>> upgrade-v3
 
     socket.on('connect', onConnect);
     socket.on('disconnect', onDisconnect);
@@ -71,6 +106,7 @@ export function GameProvider({ children }) {
   }, [pushToast]);
 
   // ------------------------------------------------------------- הצטרפות
+<<<<<<< HEAD
   /**
    * @param {object} opts
    * @param {string} opts.roomCode  קוד החדר
@@ -78,6 +114,8 @@ export function GameProvider({ children }) {
    * @param {string} opts.gameId    המשחק שנבחר
    * @param {object|null} opts.restoredProgress  התקדמות שמורה להמשך, או null להתחלה מאפס
    */
+=======
+>>>>>>> upgrade-v3
   const joinRoom = useCallback(async ({ roomCode, name, gameId, restoredProgress }) => {
     const response = await request('join-room', { roomCode, name, gameId, restoredProgress });
     if (!response?.ok) return null;
@@ -103,10 +141,13 @@ export function GameProvider({ children }) {
     socket.emit('pause-toggle', { paused });
   }, []);
 
+<<<<<<< HEAD
   /**
    * מדווח לשרת על עליית שלב ומקבל בחזרה את סיכום העקיפות.
    * השרת הוא זה שמחשב את "את מי עקפת" כי רק לו יש את התמונה המלאה.
    */
+=======
+>>>>>>> upgrade-v3
   const reportLevelUp = useCallback(async (level) => {
     const summary = await request('level-up', { level });
     if (!summary) return;
@@ -124,6 +165,10 @@ export function GameProvider({ children }) {
     leaderboard,
     toasts,
     levelUp,
+<<<<<<< HEAD
+=======
+    leaderMedal,
+>>>>>>> upgrade-v3
     joinRoom,
     leaveRoom,
     sendScore,
@@ -136,9 +181,16 @@ export function GameProvider({ children }) {
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 }
 
+<<<<<<< HEAD
 /** ה-hook שכל הרכיבים משתמשים בו כדי לגשת למצב המשחק */
+=======
+>>>>>>> upgrade-v3
 export function useGame() {
   const ctx = useContext(GameContext);
   if (!ctx) throw new Error('useGame חייב לרוץ בתוך GameProvider');
   return ctx;
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> upgrade-v3

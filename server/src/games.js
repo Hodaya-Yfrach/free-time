@@ -5,7 +5,11 @@
 // ============================================================================
 
 export const GAMES = {
+<<<<<<< HEAD
   shapes: { id: 'shapes', name: 'קרב הצורות', icon: '🍎' },
+=======
+  shapes: { id: 'shapes', name: 'קרב הצורות', icon: '🦁' },
+>>>>>>> upgrade-v3
   car:    { id: 'car',    name: 'מרוץ המכשולים', icon: '🚗' },
   dollar: { id: 'dollar', name: 'בריחת הדולר', icon: '💵' },
 };

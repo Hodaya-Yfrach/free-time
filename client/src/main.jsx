@@ -14,4 +14,8 @@ createRoot(document.getElementById('root')).render(
       <App />
     </GameProvider>
   </React.StrictMode>
+<<<<<<< HEAD
 );
+=======
+);
+>>>>>>> upgrade-v3

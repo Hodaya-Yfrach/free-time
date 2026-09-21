@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+
+>>>>>>> upgrade-v3
 # שלב 1: בניית הלקוח (React)
 FROM node:20-alpine AS client-build
 WORKDIR /repo
@@ -15,4 +19,8 @@ COPY server/ server/
 COPY --from=client-build /repo/client/dist /app/client/dist
 
 EXPOSE 3000
+<<<<<<< HEAD
 CMD ["node", "server/src/index.js"]
+=======
+CMD ["node", "server/src/index.js"]
+>>>>>>> upgrade-v3
