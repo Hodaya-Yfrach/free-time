@@ -1,30 +1,10 @@
 // ============================================================================
 //  ShapesGame.jsx — משחק הצורות
-<<<<<<< HEAD
-//  ----------------------------------------------------------------------
-//  לוגיקת המשחק היחידה שנמצאת כאן: איזו שאלה מוצגת וטיימר השאלה.
-//  ניקוד, שלבים, כישלון והשהיה — הכול מגיע מ-useGameEngine.
-=======
->>>>>>> upgrade-v3
 // ============================================================================
 
 import { useState, useEffect, useRef } from 'react';
 import Shape from './Shape.jsx';
 import { buildQuestion } from './questions.js';
-<<<<<<< HEAD
-
-export default function ShapesGame({ engine }) {
-  const { config, frozen, roundKey, registerSuccess, registerFailure } = engine;
-
-  const [question, setQuestion] = useState(() => buildQuestion(config));
-  const [msLeft, setMsLeft] = useState(config.questionMs);
-  const deadlineRef = useRef(0);
-
-  // שאלה חדשה בכל פעם ש-roundKey משתנה (תשובה נכונה / טעות / עליית שלב)
-  useEffect(() => {
-    setQuestion(buildQuestion(config));
-    setMsLeft(config.questionMs);
-=======
 import { shuffle } from './shapeData.js';
 
 export default function ShapesGame({ engine }) {
@@ -50,19 +30,10 @@ export default function ShapesGame({ engine }) {
     setRevealOn(false);
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];
->>>>>>> upgrade-v3
     deadlineRef.current = performance.now() + config.questionMs;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [roundKey]);
 
-<<<<<<< HEAD
-  // טיימר השאלה. בזמן הקפאה הדדליין נדחה קדימה כדי לא "לגנוב" זמן.
-  useEffect(() => {
-    let raf;
-    let last = performance.now();
-
-    const tick = (now) => {
-=======
   // טיימר השאלה
   useEffect(() => {
     let raf;
@@ -78,28 +49,20 @@ export default function ShapesGame({ engine }) {
         isFirstFrame = false;
       }
 
->>>>>>> upgrade-v3
       const delta = now - last;
       last = now;
 
       if (frozen) {
         deadlineRef.current += delta; // הקפאה אמיתית של הטיימר
-<<<<<<< HEAD
-=======
       } else if (freezeRef.current > 0) {
         freezeRef.current = Math.max(0, freezeRef.current - delta);
         deadlineRef.current += delta;
         setFreezeLeft(freezeRef.current);
->>>>>>> upgrade-v3
       } else {
         const remaining = deadlineRef.current - now;
         setMsLeft(Math.max(0, remaining));
         if (remaining <= 0) {
-<<<<<<< HEAD
-          registerFailure(); // נגמר הזמן = טעות
-=======
           if (!registerFailure({ grace: false })) refreshRound(); 
->>>>>>> upgrade-v3
           return;
         }
       }
@@ -108,24 +71,11 @@ export default function ShapesGame({ engine }) {
 
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-<<<<<<< HEAD
-  }, [frozen, roundKey, registerFailure]);
-=======
   }, [frozen, roundKey, registerFailure, refreshRound, config.questionMs]);
->>>>>>> upgrade-v3
 
   function handlePick(key) {
     if (frozen) return;
     if (key === question.correctKey) {
-<<<<<<< HEAD
-      // יחס המהירות: 1 = ענית מיד, 0 = ברגע האחרון
-      registerSuccess(msLeft / config.questionMs);
-    } else {
-      registerFailure();
-    }
-  }
-
-=======
       registerSuccess(msLeft / config.questionMs);
     } else if (!registerFailure({ grace: false })) {
       setHiddenKeys((keys) => [...keys, key]);
@@ -195,37 +145,24 @@ export default function ShapesGame({ engine }) {
     return cls;
   }
 
->>>>>>> upgrade-v3
   const seconds = (msLeft / 1000).toFixed(1);
   const urgent = msLeft < config.questionMs * 0.3;
 
   return (
     <div className="shapes-game">
       <div className={`question-clock${urgent ? ' question-clock--urgent' : ''}`}>
-<<<<<<< HEAD
-        ⏳ {seconds} שניות
-=======
         {seconds} שניות{freezeLeft > 0 && ' ❄️ מוקפא'}
->>>>>>> upgrade-v3
       </div>
 
       <h2 className="question-title">{question.title}</h2>
 
-<<<<<<< HEAD
-      {/* ------------------------------------------------ מצב: מה חסר */}
-=======
->>>>>>> upgrade-v3
       {question.mode === 'findMissing' && (
         <div className="find-missing">
           <div className="shape-grid">
             {question.full.map((item) => (
               <button
                 key={item.key}
-<<<<<<< HEAD
-                className="shape-cell"
-=======
                 className={cellClass('shape-cell', item.key)}
->>>>>>> upgrade-v3
                 onClick={() => handlePick(item.key)}
                 aria-label={`בחירת ${item.type}`}
               >
@@ -246,10 +183,6 @@ export default function ShapesGame({ engine }) {
         </div>
       )}
 
-<<<<<<< HEAD
-      {/* ------------------------- מצבים: התאמת קטגוריה / התאמת צללית */}
-=======
->>>>>>> upgrade-v3
       {question.mode !== 'findMissing' && (
         <div className="match-layout">
           <div className="target-wrap">
@@ -260,19 +193,11 @@ export default function ShapesGame({ engine }) {
             {question.options.map((item) => (
               <button
                 key={item.key}
-<<<<<<< HEAD
-                className="shape-cell shape-cell--option"
-                onClick={() => handlePick(item.key)}
-                aria-label={`בחירת ${item.type}`}
-              >
-                <Shape item={item} size={70} shadow={!!item.shadow} />
-=======
                 className={cellClass('shape-cell shape-cell--option', item.key)}
                 onClick={() => handlePick(item.key)}
                 aria-label={`בחירת ${item.type}`}
               >
                 <Shape item={item} size={70} shadow={!!item.shadow && !revealOn} />
->>>>>>> upgrade-v3
               </button>
             ))}
           </div>
@@ -280,8 +205,4 @@ export default function ShapesGame({ engine }) {
       )}
     </div>
   );
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> upgrade-v3

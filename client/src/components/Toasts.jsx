@@ -16,8 +16,4 @@ export default function Toasts() {
       ))}
     </div>
   );
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> upgrade-v3

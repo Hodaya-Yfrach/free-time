@@ -1,13 +1,5 @@
 // ============================================================================
 //  useCanvasStage.js — תשתית קנבס משותפת לשני משחקי התנועה
-<<<<<<< HEAD
-//  ----------------------------------------------------------------------
-//  מטפלת בשני דברים משעממים אך הכרחיים:
-//    1. התאמת גודל הקנבס לרזולוציית המסך (devicePixelRatio), כדי
-//       שהציור לא ייראה מטושטש במסכי רטינה.
-//    2. לולאת אנימציה שמעבירה delta בשניות לפונקציית הציור.
-=======
->>>>>>> upgrade-v3
 // ============================================================================
 
 import { useEffect, useRef } from 'react';
@@ -41,10 +33,6 @@ export function useCanvasStage(draw, deps = []) {
     let last = performance.now();
 
     function frame(now) {
-<<<<<<< HEAD
-      // תקרה של 50ms כדי שמעבר בין טאבים לא "יקפיץ" את המשחק קדימה
-=======
->>>>>>> upgrade-v3
       const dt = Math.min((now - last) / 1000, 0.05);
       last = now;
       drawRef.current(ctx, sizeRef.current, dt);
@@ -62,10 +50,6 @@ export function useCanvasStage(draw, deps = []) {
   return { canvasRef, sizeRef };
 }
 
-<<<<<<< HEAD
-/** ציור מלבן עם פינות מעוגלות — שימושי בשני המשחקים */
-=======
->>>>>>> upgrade-v3
 export function roundRect(ctx, x, y, w, h, r) {
   const radius = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
@@ -75,8 +59,4 @@ export function roundRect(ctx, x, y, w, h, r) {
   ctx.arcTo(x, y + h, x, y, radius);
   ctx.arcTo(x, y, x + w, y, radius);
   ctx.closePath();
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> upgrade-v3

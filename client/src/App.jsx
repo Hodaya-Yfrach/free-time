@@ -35,8 +35,4 @@ export default function App() {
       <Toasts />
     </>
   );
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> upgrade-v3
