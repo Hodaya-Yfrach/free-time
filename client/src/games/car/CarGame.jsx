@@ -6,27 +6,35 @@ import { useEffect, useRef } from 'react';
 import { useCanvasStage, roundRect } from '../useCanvasStage.js';
 import { MAX_OBJECTS_ON_SCREEN } from '../../shared/scoring.js';
 
-// הוקטנו את המכונית/המכשולים והוגדל מרווח ה"ראייה קדימה" (TOP_SPAWN_MARGIN)
-// לפי בקשה מפורשת: כביש ורכב קטנים יותר = יותר שורות מכשולים נראות בבת
-// אחת על אותו גובה מסך, וזה בדיוק מה שנותן לשחקן יותר זמן תגובה מראש.
-const BASE_SPEED = 185;
+// הוקטנו את המכונית/המכשולים בלבד (לא הכביש!) והוגדל מרווח ה"ראייה
+// קדימה" (TOP_SPAWN_MARGIN) - כדי שיהיה יותר טווח ראייה לפני התנגשות.
+// שימו לב: רוחב הכביש עצמו כבר לא תלוי ב-CAR_WIDTH (ר' getRoadMetrics) -
+// כי זה מה שגרם ל"כל האזור להיראות מוקטן": כשהמכונית קטנה, נוסחה ישנה
+// שחישבה את רוחב הכביש לפי גודל המכונית יצרה כביש צר עם המון שוליים
+// ריקים, למרות שהקנבס עצמו (ה-div) בגודלו המלא כל הזמן. עכשיו הכביש
+// תמיד רחב ככל האפשר בתוך הקנבס, והמכונית/המכשולים קטנים *בתוכו* -
+// זה בדיוק אפקט ה"זום-אאוט" שנותן יותר זמן להבחין במכשולים מרחוק.
+const BASE_SPEED = 150;
 const CAR_WIDTH = 42;
 const CAR_HEIGHT = 56;
 const OBSTACLE_HEIGHT = 20;
 const ROW_GAP = CAR_HEIGHT + 30;
 const VEHICLE_GAP = CAR_HEIGHT * 2.3;
-const TOP_SPAWN_MARGIN = 340;
+const TOP_SPAWN_MARGIN = 400;
 const OFFSCREEN_CLEANUP = 900;
 const MIN_VISIBLE_OBSTACLES = 10;
 const STEER_SPEED = 620;
 const MEDAL_GOAL = 5;
 const START_GRACE_MS = 1500; // זמן "התחממות" מוחלט לפני שמתחילים לזוז/להתנגש - נספר משעון אמת, לא מ-dt מצטבר
+const MIN_LANE_WIDTH = 90;   // רוחב מינימלי לנתיב - כך שהכביש תמיד נראה "מלא", לא צר ומוקטן
+const MAX_LANE_WIDTH = 150;  // תקרה - כדי שבשלב 1 (2 נתיבים בלבד) הכביש לא ייראה רחב מדי/מוגזם
 
 function getRoadMetrics(width, laneCount) {
-  const roadWidth = Math.min(width * 0.92, (CAR_WIDTH + 56) * laneCount);
+  const idealLaneWidth = (width * 0.94) / laneCount;
+  const laneWidth = Math.min(MAX_LANE_WIDTH, Math.max(MIN_LANE_WIDTH, idealLaneWidth));
+  const roadWidth = Math.min(width * 0.97, laneWidth * laneCount);
   const left = (width - roadWidth) / 2;
-  const laneWidth = roadWidth / laneCount;
-  return { left, width: roadWidth, laneWidth };
+  return { left, width: roadWidth, laneWidth: roadWidth / laneCount };
 }
 
 export default function CarGame({ engine }) {
