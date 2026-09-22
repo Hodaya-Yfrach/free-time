@@ -98,3 +98,14 @@ export function removePowerup(uid) {
   safeSet(POWERUPS_KEY, list);
   return list;
 }
+
+export function clearAllBrowserRewards() {
+  try {
+    localStorage.removeItem(OWNED_KEY);
+    localStorage.removeItem(SKIP_USES_KEY);
+    localStorage.removeItem(MEDALS_KEY);
+    localStorage.removeItem(POWERUPS_KEY);
+  } catch {
+    /* ignore */
+  }
+}

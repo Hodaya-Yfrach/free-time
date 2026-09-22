@@ -83,6 +83,20 @@ export function saveLastName(name) {
   }
 }
 
+export function clearBrowserProgress() {
+  try {
+    const keys = [];
+    for (let i = 0; i < localStorage.length; i += 1) {
+      const key = localStorage.key(i);
+      if (key && key.startsWith(PREFIX)) keys.push(key);
+      if (key === NAME_KEY) keys.push(key);
+    }
+    for (const key of keys) localStorage.removeItem(key);
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * הבדיקה שמפעילה את אזהרת מעבר החדר.
  * מחזירה את ההתקדמות שתימחק, או null אם אין מה לאבד.

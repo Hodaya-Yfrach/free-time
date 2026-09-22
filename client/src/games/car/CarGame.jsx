@@ -6,16 +6,19 @@ import { useEffect, useRef } from 'react';
 import { useCanvasStage, roundRect } from '../useCanvasStage.js';
 import { MAX_OBJECTS_ON_SCREEN } from '../../shared/scoring.js';
 
-const BASE_SPEED = 185; 
-const CAR_WIDTH = 62;
-const CAR_HEIGHT = 82;
-const OBSTACLE_HEIGHT = 18; 
-const ROW_GAP = CAR_HEIGHT + 24; 
-const VEHICLE_GAP = CAR_HEIGHT * 2; 
-const TOP_SPAWN_MARGIN = 180;  
-const OFFSCREEN_CLEANUP = 900; 
-const MIN_VISIBLE_OBSTACLES = 8; 
-const STEER_SPEED = 620;      
+// הוקטנו את המכונית/המכשולים והוגדל מרווח ה"ראייה קדימה" (TOP_SPAWN_MARGIN)
+// לפי בקשה מפורשת: כביש ורכב קטנים יותר = יותר שורות מכשולים נראות בבת
+// אחת על אותו גובה מסך, וזה בדיוק מה שנותן לשחקן יותר זמן תגובה מראש.
+const BASE_SPEED = 185;
+const CAR_WIDTH = 42;
+const CAR_HEIGHT = 56;
+const OBSTACLE_HEIGHT = 20;
+const ROW_GAP = CAR_HEIGHT + 30;
+const VEHICLE_GAP = CAR_HEIGHT * 2.3;
+const TOP_SPAWN_MARGIN = 340;
+const OFFSCREEN_CLEANUP = 900;
+const MIN_VISIBLE_OBSTACLES = 10;
+const STEER_SPEED = 620;
 const MEDAL_GOAL = 5;
 const START_GRACE_MS = 1500; // זמן "התחממות" מוחלט לפני שמתחילים לזוז/להתנגש - נספר משעון אמת, לא מ-dt מצטבר
 
@@ -28,7 +31,7 @@ function getRoadMetrics(width, laneCount) {
 
 export default function CarGame({ engine }) {
   const {
-    config, frozen, roundKey, registerSuccess, registerFailure, ownedPrizes,
+    config, level, failed, frozen, registerSuccess, registerFailure, ownedPrizes,
     powerHandlerRef, shieldsRef, shieldGraceUntilRef, collectMedal, medalRunCount,
   } = engine;
 
@@ -55,15 +58,43 @@ export default function CarGame({ engine }) {
   useEffect(() => { frozenRef.current = frozen; }, [frozen]);
   useEffect(() => { configRef.current = config; }, [config]);
 
+  // איפוס מיקום המכונית - פעם אחת בלבד, בטעינת המשחק. המכונית *לא* חוזרת
+  // למרכז בכל סיבוב - היא נשארת בנתיב שאליו הועברה (לפי בקשה מפורשת).
   useEffect(() => {
+    world.current.carX = 0.5;
+    world.current.targetX = 0.5;
+  }, []);
+
+  // איפוס הכביש (מכשולים+מדליות) - רק כשמבנה הנתיבים בפועל משתנה
+  // (עליית שלב אמיתית עם יותר/פחות נתיבים), לא בכל שורה שנעקפת.
+  //
+  // זה תיקון לבאג חוזר: הקוד הקודם איפס הכול לפי roundKey, ו-roundKey
+  // של המנוע מתקדם אחרי *כל* הצלחה בודדת (גם ב-levelUpMode='time' של
+  // המכונית) - כך שכל שורה שנעקפת בהצלחה מחקה את כל הכביש מחדש. זה
+  // בדיוק מה שנראה כ"המכשולים בורחים/נעלמים כל הזמן".
+  const laneLayoutKeyRef = useRef(null);
+  useEffect(() => {
+    const key = `${config.lanes}:${config.blockedLanes}`;
+    if (laneLayoutKeyRef.current === key) return;
+    laneLayoutKeyRef.current = key;
     world.current.obstacles = [];
     world.current.medals = [];
     world.current.spawnTimer = 0.6;
     world.current.nextSpawnY = -200;
-    world.current.carX = 0.5;
-    world.current.targetX = 0.5;
-    world.current.readyAt = 0;
-  }, [roundKey]);
+  }, [config.lanes, config.blockedLanes]);
+
+  // איפוס נוסף בדיוק ברגע שחוזרים ממסך הכישלון (אחרי תאונה)
+  const prevFailedRef = useRef(failed);
+  useEffect(() => {
+    const recoveredFromFailure = prevFailedRef.current && !failed;
+    prevFailedRef.current = failed;
+    if (!recoveredFromFailure) return;
+    world.current.obstacles = [];
+    world.current.medals = [];
+    world.current.spawnTimer = 0.6;
+    world.current.nextSpawnY = -200;
+    world.current.readyAt = 0; // כמה שניות חסינות טריות אחרי תאונה
+  }, [failed]);
 
   const { canvasRef, sizeRef } = useCanvasStage((ctx, size, dt) => {
     const { width, height } = size;
@@ -211,11 +242,7 @@ export default function CarGame({ engine }) {
       const x = road.left + obs.lane * laneWidth + 6;
       const cellWidth = laneWidth - 12;
 
-      ctx.fillStyle = '#e11d48';
-      roundRect(ctx, x, obs.y, cellWidth, obs.height, 10);
-      ctx.fill();
-
-      ctx.fillText('🚧', x + cellWidth / 2, obs.y + obs.height / 2);
+      drawTrafficCar(ctx, x, obs.y, cellWidth, obs.height);
     }
 
     const carCx = road.left + w.carX * road.width;
@@ -383,6 +410,36 @@ function drawSafeLane(ctx, width, height, obstacles, laneCount) {
   ctx.save();
   ctx.fillStyle = 'rgba(34,197,94,0.15)'; 
   ctx.fillRect(road.left + bestLane * laneWidth + 6, 0, laneWidth - 12, height);
+  ctx.restore();
+}
+
+function drawTrafficCar(ctx, x, y, width, height) {
+  const carHeight = Math.max(22, height);
+  const bodyWidth = Math.max(26, width - 8);
+  const bodyHeight = carHeight * 0.7;
+  const bodyX = x + (width - bodyWidth) / 2;
+  const bodyY = y + (carHeight - bodyHeight) / 2;
+
+  ctx.save();
+  ctx.fillStyle = '#f8fafc';
+  ctx.shadowColor = 'rgba(15, 23, 42, 0.25)';
+  ctx.shadowBlur = 10;
+  roundRect(ctx, bodyX, bodyY, bodyWidth, bodyHeight, 8);
+  ctx.fill();
+
+  ctx.fillStyle = '#1e293b';
+  roundRect(ctx, bodyX + bodyWidth * 0.12, bodyY + bodyHeight * 0.2, bodyWidth * 0.76, bodyHeight * 0.55, 6);
+  ctx.fill();
+
+  ctx.fillStyle = '#dbeafe';
+  roundRect(ctx, bodyX + bodyWidth * 0.22, bodyY + bodyHeight * 0.28, bodyWidth * 0.56, bodyHeight * 0.22, 4);
+  ctx.fill();
+
+  ctx.fillStyle = '#0f172a';
+  ctx.fillRect(bodyX + bodyWidth * 0.12, bodyY + bodyHeight * 0.75, 8, 8);
+  ctx.fillRect(bodyX + bodyWidth * 0.72, bodyY + bodyHeight * 0.75, 8, 8);
+  ctx.fillRect(bodyX + bodyWidth * 0.12, bodyY + bodyHeight * 0.06, 8, 8);
+  ctx.fillRect(bodyX + bodyWidth * 0.72, bodyY + bodyHeight * 0.06, 8, 8);
   ctx.restore();
 }
 
