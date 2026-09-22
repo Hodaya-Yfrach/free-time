@@ -6,8 +6,9 @@ import { useState } from 'react';
 import { GAMES } from '../shared/games.js';
 import {
   loadAllProgress, loadLastName, saveLastName,
-  progressAtRisk, clearProgress, loadProgress,
+  progressAtRisk, clearProgress, loadProgress, clearBrowserProgress,
 } from '../storage/progress.js';
+import { clearAllBrowserRewards } from '../storage/prizesStorage.js';
 import { useGame } from '../state/GameContext.jsx';
 import RoomBrowser from './RoomBrowser.jsx';
 import GamesInfo from '../components/GamesInfo.jsx';
@@ -76,6 +77,18 @@ export default function LobbyScreen({ onStart }) {
     enter({ reset: false });
   }
 
+  function handleFullReset() {
+    const shouldReset = window.confirm('האם למחוק את כל ההתקדמות והשמירות של הדפדפן הזה?');
+    if (!shouldReset) return;
+
+    clearBrowserProgress();
+    clearAllBrowserRewards();
+    setName('');
+    setRoomCode('');
+    setWarning(null);
+    setBusy(false);
+  }
+
   return (
     <div className="lobby">
       <header className="lobby__header">
@@ -94,6 +107,13 @@ export default function LobbyScreen({ onStart }) {
             {tab.label}
           </button>
         ))}
+        <button
+          type="button"
+          className="lobby__nav-btn lobby__nav-btn--reset"
+          onClick={handleFullReset}
+        >
+          איפוס כל השמירות
+        </button>
       </nav>
 
       {view === 'info' && <GamesInfo />}
